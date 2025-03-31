@@ -1,1 +1,1 @@
-CREATE SCHEMA `videos`;
+CREATE SCHEMA `naturalanomaly`;

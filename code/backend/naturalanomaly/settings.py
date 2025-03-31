@@ -77,7 +77,7 @@ WSGI_APPLICATION = 'naturalanomaly.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # Use MySQL database
-        'NAME': 'videos',  # Name of your database
+        'NAME': 'naturalanomaly',  # Name of your database
         'USER': 'root',  # Your MySQL username
         'PASSWORD': 'Mnbvox986',  # Your MySQL password
         'HOST': 'localhost',  # Host where MySQL is running (usually 'localhost')
