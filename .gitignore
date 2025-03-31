@@ -2,3 +2,8 @@
 __pycache__
 venv
 code/backend/server/naturalAnomaly/DataProccessor/bbox_images
+code/__init__.py
+code/backend/__init__.py
+code/backend/server/__init__.py
+code/backend/server/naturalAnomaly/__init__.py
+code/backend/server/naturalAnomaly/migrations/__init__.py
