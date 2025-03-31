@@ -1,4 +1,4 @@
 .idea
 __pycache__
 venv
-code/backend/server/naturalAnomaly/DataProccessor/bbox_images
+DataProccessor/bbox_images
