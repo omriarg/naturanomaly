@@ -3,7 +3,7 @@ import json
 from ollama import chat
 from ollama import ChatResponse
 
-def queryOlama(query):
+def queryOllama(query):
     body = query.body
     response: ChatResponse = chat(model='llama3.2', messages=[
         {

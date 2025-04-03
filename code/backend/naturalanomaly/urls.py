@@ -19,5 +19,5 @@ from django.urls import path
 from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("api/query-ollama/", views.queryOlama, name="queryOllama"),
+    path("api/query-ollama/", views.queryOllama, name="queryOllama"),
 ]
