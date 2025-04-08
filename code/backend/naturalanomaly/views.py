@@ -11,5 +11,5 @@ def queryOllama(request):
             response = chatWithOllama(query)
             return HttpResponse(response)
     else:
-        return JsonResponse({'error': 'Only POST requests are allowed'}, status=405)
+        return  HttpResponse({'error': 'Only POST requests are allowed'}, status=405)
 
