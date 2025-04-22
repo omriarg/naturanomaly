@@ -5,6 +5,7 @@ import chromadb
 from typing import Dict, Callable
 from chromadb.config import Settings
 import re
+import vanna as vn
 def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store", collection_name="tracked_data"):
     # data Cleaning and Embedding
     client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
@@ -20,7 +21,6 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
     semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date']
     df = df[semantic_fields]
     documents = df.apply(lambda row: ' | '.join(f"{col}: {row[col]}" for col in semantic_fields), axis=1).tolist()
-
     print(f"🔄 Preprocessing and embedding {len(documents)} rows...")
 
     collection = client.create_collection(name=collection_name)
@@ -28,6 +28,7 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
     for i, doc in enumerate(documents):
         embedding = ollama.embed(model="mxbai-embed-large", input=doc)["embeddings"][0]
         collection.add(ids=[str(i)], documents=[doc], embeddings=[embedding])
+
 
 def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
     client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
@@ -98,7 +99,7 @@ def chatWithOllama(query: str) -> str:
     Returns:
         str: The result of either tool execution or Ollama's response.
     """
-    embeddedContext = preprocess_query(query)
+    Context = preprocess_query(query)
 
     messages = [
         {
@@ -112,7 +113,7 @@ def chatWithOllama(query: str) -> str:
 
             ),
         },
-        {'role': 'user', 'content':f"using this related data{embeddedContext} answer this:" + query},
+        {'role': 'user', 'content':f"using this related data{Context} answer this:" + query},
     ]
     available_functions: Dict[str, Callable] = {
         'execute_sql': execute_sql,
@@ -136,22 +137,3 @@ def chatWithOllama(query: str) -> str:
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
-test_queries = [
-    {"query": "Show only objects which are trucks", "expected": "SQL"},
-    {"query": "List all objects detected on 2024-12-10.", "expected": "SQL"},
-    {"query": "Which track_id had the lowest confidence score?", "expected": "SQL"},
-    {"query": "How many bicycles were detected overall?", "expected": "SQL"},
-    {"query": "List all entries where confidence is greater than 0.9.", "expected": "SQL"},
-    {"query": "What are the top 3 most frequent object types?", "expected": "SQL"},
-    {"query": "Which hours of the day are the busiest based on detections?", "expected": "SQL"},
-
-    {"query": "What does YOLO mean in object detection?", "expected": "LLM"},
-    {"query": "What is your role in this application?", "expected": "LLM"},
-    {"query": "Can you explain what an embedding is?", "expected": "LLM"},
-
-    {"query": "How many vehicles were identified as trucks and what does that mean?", "expected": "MIXED"},
-    {"query": "Summarize what happened in the data last Friday.", "expected": "MIXED"},
-    {"query": "What patterns can you see in object type and time of day?", "expected": "MIXED"},
-]
-for query in test_queries:
-    print(chatWithOllama("what is the most identified object_name"))
