@@ -89,6 +89,54 @@ def respond_to_user(query: str) -> str:
         return f"Error during Ollama API call: {e}"
 
 
+def execute_sql(query: str) -> str:
+    """
+    This function executes an SQL query on the tracked_objects CSV data and returns the result in table format.'
+    use this Function only when user prompt specifically ask about the Data, and not when asking general questions'
+    Use this example data for reference: '
+    bbox, track_id, object_name, time_date, bbox_image_path, confidence, score\n'
+    "[428, 495, 523, 576]", 1.0, car, 2025-03-10__18_06_43_202788, ./bbox_images\\1.0_2025-03-10__18_06_43_202788.jpg, 0.7555075883865356\n',
+
+    Args:
+        query (str): The SQL query to execute on the dataset.
+
+    Returns:
+        str: The result of the SQL query in table format.
+    """
+    try:
+        data = pd.read_csv("tracked_objects.csv")
+        result = psql.sqldf(query, {"tracked_objects": data})
+        return result.to_string(index=False)
+    except Exception as e:
+        return f"Error executing SQL query: {e}"
+
+
+def respond_to_user(query: str) -> str:
+    """
+    Ask Ollama a general question (not related to SQL queries).
+
+    Args:
+        query (str): The user's input question unaltered.
+
+    Returns:
+        str: Ollama's direct response.
+    """
+    try:
+        response = ollama.chat(
+            model='llama3.2',
+            messages=[ {
+                'role': 'system',
+                'content': (
+                    "You are a helpful assistant in a chat UI, helping user Query a backend YOLO object detection model.\n"
+                ),
+            },
+                {'role': 'user', 'content': query}],
+        )
+        return response.message.content
+    except Exception as e:
+        return f"Error during Ollama API call: {e}"
+
+
 def chatWithOllama(query: str) -> str:
     """
     Query Ollama with a user prompt and determine whether to use an SQL tool or a direct response.
