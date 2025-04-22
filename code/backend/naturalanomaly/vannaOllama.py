@@ -59,3 +59,6 @@ for question, sql in training_data:
 sql=vn.generate_sql("show all trucks and time their time of detection")
 answer_df=run_sql(sql)
 print(answer_df)
+sql=vn.generate_sql("what is the busiest time?")
+answer_df=run_sql(sql)
+print(answer_df)
