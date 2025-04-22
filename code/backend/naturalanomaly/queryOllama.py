@@ -1,114 +1,63 @@
-import ollama
 import pandas as pd
 import pandasql as psql
-import chromadb
-from typing import Dict, Callable
-from chromadb.config import Settings
-import re
-import vanna as vn
-def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store", collection_name="tracked_data"):
-    # data Cleaning and Embedding
-    client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
+from vanna.ollama import Ollama
+from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
+from cleanData import *
+# Define a custom Vanna class combining Ollama and ChromaDB
+class MyVanna(ChromaDB_VectorStore, Ollama):
+    def __init__(self, config=None):
+        ChromaDB_VectorStore.__init__(self, config=config)
+        Ollama.__init__(self, config=config)
 
-    existing_collections = [c.name for c in client.list_collections()]
-    if collection_name in existing_collections:
-        print(f"✅ Vector store for '{collection_name}' already exists. Skipping preprocessing.")
-        return
+# Initialize Vanna with model and ChromaDB vector store
+vn = MyVanna(config={
+    'model': 'llama3.2:3b',
+    'persist_directory': './vector_store'
+})
+# Load CSV as DataFrame
+df = pd.read_csv("tracked_objects.csv")
 
-    df = pd.read_csv(csv_path)
-
-    # Keep only relevant fields
-    semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date']
-    df = df[semantic_fields]
-    documents = df.apply(lambda row: ' | '.join(f"{col}: {row[col]}" for col in semantic_fields), axis=1).tolist()
-    print(f"🔄 Preprocessing and embedding {len(documents)} rows...")
-
-    collection = client.create_collection(name=collection_name)
-
-    for i, doc in enumerate(documents):
-        embedding = ollama.embed(model="mxbai-embed-large", input=doc)["embeddings"][0]
-        collection.add(ids=[str(i)], documents=[doc], embeddings=[embedding])
-
-
-def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
-    client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
-    collection = client.get_collection(name=collection_name)
-
-    response = ollama.embed(model="mxbai-embed-large", input=query)
-    query_embedding = response["embeddings"][0]
-
-    results = collection.query(query_embeddings=[query_embedding], n_results=7)
-    retrieved_data = "\n".join(results['documents'][0])
-    return retrieved_data
-
-
-def execute_sql(query: str) -> str:
-    """
-    This function executes an SQL query on the tracked_objects CSV data and returns the result in table format.'
-    use this Function only when user prompt specifically ask about the Data, and not when asking general questions'
-    Use this example data for reference: '
-    bbox, track_id, object_name, time_date, bbox_image_path, confidence, score\n'
-
-    Args:
-        query (str): The SQL query to execute on the dataset.
-
-    Returns:
-        str: The result of the SQL query in table format.
-    """
+# Define SQL runner on DataFrame using pandasql
+def run_sql(sql):
     try:
-        data = pd.read_csv("tracked_objects.csv")
-        result = psql.sqldf(query, {"tracked_objects": data})
-        return result.to_string(index=False)
+        return psql.sqldf(sql, {'df': df})
     except Exception as e:
-        return f"Error executing SQL query: please clarify your question"
+        print(f"SQL execution error: {e}")
+        return pd.DataFrame()
 
+# Register run_sql with Vanna
+vn.run_sql = run_sql
+vn.run_sql_is_set = True
+print("DataFrame connected and SQL runner set.")
 
-def respond_to_user(query: str) -> str:
-    """
-    Ask Ollama a general question (not related to SQL queries).
+# Train Vanna with questions and SQL queries
+training_data = [
+    ("Which track_id had the lowest confidence score?",
+     "SELECT track_id, MIN(confidence) AS lowest_confidence FROM df GROUP BY track_id ORDER BY lowest_confidence ASC LIMIT 1;"),
 
-    Args:
-        query (str): The user's input question unaltered.
+    ("What are the top 5 object types by average confidence?",
+     "SELECT object_name, AVG(confidence) AS avg_confidence FROM df GROUP BY object_name ORDER BY avg_confidence DESC LIMIT 5;"),
 
-    Returns:
-        str: Ollama's direct response.
-    """
-    try:
-        response = ollama.chat(
-            model='llama3.2',
-            messages=[ {
-                'role': 'system',
-                'content': (
-                    "You are a helpful assistant in a chat UI, helping user Query a backend YOLO object detection model.\n"
-                ),
-            },
-                {'role': 'user', 'content': query}],
-        )
-        return response.message.content
-    except Exception as e:
-        return f"Error during Ollama API call: {e}"
+    ("What is the average score for each track_id?",
+     "SELECT track_id, AVG(score) AS avg_score FROM df GROUP BY track_id ORDER BY avg_score DESC;"),
 
+    ("How many unique object types were detected?",
+     "SELECT COUNT(DISTINCT object_name) AS unique_object_types FROM df;"),
 
-def execute_sql(query: str) -> str:
-    """
-    This function executes an SQL query on the tracked_objects CSV data and returns the result in table format.'
-    use this Function only when user prompt specifically ask about the Data, and not when asking general questions'
-    Use this example data for reference: '
-    bbox, track_id, object_name, time_date, bbox_image_path, confidence, score\n'
-    "[428, 495, 523, 576]", 1.0, car, 2025-03-10__18_06_43_202788, ./bbox_images\\1.0_2025-03-10__18_06_43_202788.jpg, 0.7555075883865356\n',
+    ("Which track_id had the most recent detection?",
+     "SELECT track_id, MAX(time_date) AS last_seen FROM df GROUP BY track_id ORDER BY last_seen DESC LIMIT 1;"),
 
-    Args:
-        query (str): The SQL query to execute on the dataset.
+    ("What is the average confidence score across the dataset?",
+     "SELECT AVG(confidence) AS overall_avg_confidence FROM df;")
+]
 
-    Returns:
-        str: The result of the SQL query in table format.
-    """
-    try:
-        data = pd.read_csv("tracked_objects.csv")
-        result = psql.sqldf(query, {"tracked_objects": data})
-        return result.to_string(index=False)
-    except Exception as e:
-        return f"Error executing SQL query: {e}"
+for question, sql in training_data:
+    vn.train(question=question, sql=sql)
+
+def execute_sql(query):
+    sql=vn.generate_sql(query)
+    answer_df=run_sql(sql)
+    return answer_df
 
 
 def respond_to_user(query: str) -> str:
@@ -153,15 +102,18 @@ def chatWithOllama(query: str) -> str:
         {
             'role': 'system',
             'content': (
-                "You are a helpful assistant that determines whether a query requires SQL execution or a general response.\n"
-                "- If the user asks about tracked object data (e.g., confidence scores, track IDs, object name), use `execute_sql`.\n"
-                "- If the question is general (e.g., 'What is your role?'), use `respond_to_user`.\n\n"
-                "Here is a sample of the data schema:\n"
+                "You are a helpful assistant that decides whether to use an internal SQL tool or give a general response.\n"
+                "- If the user asks a question that relates to the tracked object dataset (e.g., confidence scores, object names, track IDs), "
+                "and it would require querying data, then simply pass the **original user query unchanged** to the `execute_sql` function.\n"
+                "- **Do NOT attempt to write or modify SQL yourself.** The SQL tool will handle interpretation.\n"
+                "- If the question is general or unrelated to tracked data, use the `respond_to_user` function instead.\n\n"
+                "Available fields in the dataset are:\n"
                 "(bbox, track_id, object_name, time_date, bbox_image_path, confidence, score)\n"
-
+                "Base your judgment on whether the query requires analyzing this data."
+                f'added context:{Context}'
             ),
         },
-        {'role': 'user', 'content':f"using this related data{Context} answer this:" + query},
+        {'role': 'user', 'content': query}
     ]
     available_functions: Dict[str, Callable] = {
         'execute_sql': execute_sql,
@@ -185,3 +137,4 @@ def chatWithOllama(query: str) -> str:
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
+print(chatWithOllama("what is the busiest time?"))
