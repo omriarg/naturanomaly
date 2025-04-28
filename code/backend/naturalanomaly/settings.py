@@ -24,9 +24,11 @@ SECRET_KEY = 'django-insecure-m=l*hr!y4h_6h$o2=g7t-^3u==&t)p^mkzjs$mb#-8=4v!!@1s
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost','localhost:5173']
 
-ALLOWED_HOSTS = []
-
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:5173',
+]
 
 # Application definition
 
@@ -38,6 +40,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'naturalanomaly',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
@@ -79,7 +82,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.mysql',  # Use MySQL database
         'NAME': 'naturalanomaly',  # Name of your database
         'USER': 'root',  # Your MySQL username
-        'PASSWORD': 'Mnbvox986',  # Your MySQL password
+        'PASSWORD': 'YigalGu27.',  # Your MySQL password
         'HOST': 'localhost',  # Host where MySQL is running (usually 'localhost')
         'PORT': '3306',  # Default MySQL port
     }

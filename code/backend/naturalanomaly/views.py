@@ -4,12 +4,23 @@ from ollama import chat
 from ollama import ChatResponse
 from .queryOllama import *
 
+from django.http import JsonResponse
+import json
+
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+import json
+
+@api_view(['POST'])
 def queryOllama(request):
-    if request.method == "POST":#no video_id use for now
-            data = json.loads(request.body)#get ollama query
-            query = data['message']
-            response = chatWithOllama(query)
-            return HttpResponse(response)
+    print('query')
+    data = json.loads(request.body)
+    query = data.get('message')
+    if query:
+        response = chatWithOllama(query)
+        return Response({'response': response})
     else:
-        return  HttpResponse({'error': 'Only POST requests are allowed'}, status=405)
+        return Response({'error': 'Missing query parameter'}, status=400)
+
+
 
