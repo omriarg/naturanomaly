@@ -2,21 +2,21 @@ import pandas as pd
 import pandasql as psql
 from vanna.ollama import Ollama
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
-from cleanData import *
+from .cleanData import *
+import os
 # Define a custom Vanna class combining Ollama and ChromaDB
 class MyVanna(ChromaDB_VectorStore, Ollama):
     def __init__(self, config=None):
         ChromaDB_VectorStore.__init__(self, config=config)
         Ollama.__init__(self, config=config)
-
 # Initialize Vanna with model and ChromaDB vector store
+
 vn = MyVanna(config={
     'model': 'llama3.2:3b',
-    'persist_directory': './vector_store'
+    'persist_directory': os.path.join(BASE_DIR,'vector_store')
 })
 # Load CSV as DataFrame
-df = pd.read_csv("tracked_objects.csv")
-
+df = pd.read_csv(os.path.join(BASE_DIR,'tracked_objects.csv'))
 # Define SQL runner on DataFrame using pandasql
 def run_sql(sql):
     try:
@@ -24,7 +24,6 @@ def run_sql(sql):
     except Exception as e:
         print(f"SQL execution error: {e}")
         return pd.DataFrame()
-
 # Register run_sql with Vanna
 vn.run_sql = run_sql
 vn.run_sql_is_set = True
@@ -55,10 +54,12 @@ for question, sql in training_data:
     vn.train(question=question, sql=sql)
 
 def execute_sql(query):
-    sql=vn.generate_sql(query)
-    answer_df=run_sql(sql)
-    return answer_df
-
+    try:
+        print(query)
+        result = vn.generate_sql(query,allow_llm_to_see_data=True)
+        return run_sql(result).to_string()
+    except Exception as e:
+        return f"Error in vn.ask: {e}"
 
 def respond_to_user(query: str) -> str:
     """
@@ -103,7 +104,7 @@ def chatWithOllama(query: str) -> str:
             'role': 'system',
             'content': (
                 "You are a helpful assistant that decides whether to use an internal SQL tool or give a general response.\n"
-                "- If the user asks a question that relates to the tracked object dataset (e.g., confidence scores, object names, track IDs), "
+                "- If the user asks a question that relates to the df (e.g., confidence scores, object names, track IDs), "
                 "and it would require querying data, then simply pass the **original user query unchanged** to the `execute_sql` function.\n"
                 "- **Do NOT attempt to write or modify SQL yourself.** The SQL tool will handle interpretation.\n"
                 "- If the question is general or unrelated to tracked data, use the `respond_to_user` function instead.\n\n"
@@ -129,12 +130,16 @@ def chatWithOllama(query: str) -> str:
 
         if response.message.tool_calls:
             for tool in response.message.tool_calls:
+                # Ensure that the original query is passed to the SQL execution tool
+                if tool.function.name == 'execute_sql':
+                    return execute_sql(query)  # Pass the original user query directly
+
                 function_to_call = available_functions.get(tool.function.name)
                 if function_to_call:
                     return function_to_call(**tool.function.arguments)
+
 
         return response.message.content  # Return Ollama's direct response if no tool is needed
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
-print(chatWithOllama("what is the busiest time?"))

@@ -1,0 +1,88 @@
+{
+  "hash": "0513d68f",
+  "configHash": "0dc0e76a",
+  "lockfileHash": "d53b9c34",
+  "browserHash": "f15059e2",
+  "optimized": {
+    "react": {
+      "src": "../../node_modules/react/index.js",
+      "file": "react.js",
+      "fileHash": "6032d44b",
+      "needsInterop": true
+    },
+    "react-dom/client": {
+      "src": "../../node_modules/react-dom/client.js",
+      "file": "react-dom_client.js",
+      "fileHash": "143bb095",
+      "needsInterop": true
+    },
+    "@mui/material": {
+      "src": "../../node_modules/@mui/material/esm/index.js",
+      "file": "@mui_material.js",
+      "fileHash": "f11555be",
+      "needsInterop": false
+    },
+    "react-player": {
+      "src": "../../node_modules/react-player/lib/index.js",
+      "file": "react-player.js",
+      "fileHash": "5d97a560",
+      "needsInterop": true
+    }
+  },
+  "chunks": {
+    "FilePlayer-FH3PZYIO": {
+      "file": "FilePlayer-FH3PZYIO.js"
+    },
+    "Preview-SLK2TS3E": {
+      "file": "Preview-SLK2TS3E.js"
+    },
+    "Facebook-5XAJ2VQS": {
+      "file": "Facebook-5XAJ2VQS.js"
+    },
+    "Streamable-Z3HJCUGS": {
+      "file": "Streamable-Z3HJCUGS.js"
+    },
+    "Wistia-ZMZTXCKL": {
+      "file": "Wistia-ZMZTXCKL.js"
+    },
+    "Twitch-CWGHSF3J": {
+      "file": "Twitch-CWGHSF3J.js"
+    },
+    "DailyMotion-YEM3BEZG": {
+      "file": "DailyMotion-YEM3BEZG.js"
+    },
+    "Mixcloud-DSFL345P": {
+      "file": "Mixcloud-DSFL345P.js"
+    },
+    "Vidyard-GWDXHKHV": {
+      "file": "Vidyard-GWDXHKHV.js"
+    },
+    "Kaltura-SZRWYTSM": {
+      "file": "Kaltura-SZRWYTSM.js"
+    },
+    "chunk-WDQG72PJ": {
+      "file": "chunk-WDQG72PJ.js"
+    },
+    "chunk-VMOYVQZT": {
+      "file": "chunk-VMOYVQZT.js"
+    },
+    "YouTube-G4RQ4FG3": {
+      "file": "YouTube-G4RQ4FG3.js"
+    },
+    "SoundCloud-MTJAD2MS": {
+      "file": "SoundCloud-MTJAD2MS.js"
+    },
+    "Vimeo-CJ3R7KGW": {
+      "file": "Vimeo-CJ3R7KGW.js"
+    },
+    "Mux-JBPL7LZP": {
+      "file": "Mux-JBPL7LZP.js"
+    },
+    "chunk-ZE3GGOUE": {
+      "file": "chunk-ZE3GGOUE.js"
+    },
+    "chunk-KQ7WO6A7": {
+      "file": "chunk-KQ7WO6A7.js"
+    }
+  }
+}
