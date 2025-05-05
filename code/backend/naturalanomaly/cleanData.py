@@ -5,8 +5,12 @@ import chromadb
 from typing import Dict, Callable
 from chromadb.config import Settings
 import re
+import os
+from django.conf import settings
+BASE_DIR=os.path.join(settings.BASE_DIR,'naturalanomaly')
 def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store", collection_name="tracked_data"):
     # data Cleaning and Embedding
+    persist_path=os.path.join(BASE_DIR, persist_path)
     client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
 
     existing_collections = [c.name for c in client.list_collections()]
@@ -30,6 +34,7 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
 
 
 def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
+    persist_path=os.path.join(BASE_DIR, persist_path)
     client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
     collection = client.get_collection(name=collection_name)
 

@@ -2,3 +2,4 @@
 __pycache__
 venv
 DataProccessor/bbox_images
+.venv
