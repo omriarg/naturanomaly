@@ -1,7 +1,5 @@
 from django.http import JsonResponse, HttpResponse
 import json
-from ollama import chat
-from ollama import ChatResponse
 from .queryOllama import *
 
 from django.http import JsonResponse
