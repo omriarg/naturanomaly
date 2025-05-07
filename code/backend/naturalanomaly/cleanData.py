@@ -32,6 +32,14 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
         embedding = ollama.embed(model="mxbai-embed-large", input=doc)["embeddings"][0]
         collection.add(ids=[str(i)], documents=[doc], embeddings=[embedding])
 
+def preprocess_data_without_embedding(df):
+    # data Cleaning, reduce signal to noise
+    # Keep only relevant fields
+    semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date','score']
+    df = df[semantic_fields]
+    documents = df.apply(lambda row: ' | '.join(f"{col}: {row[col]}" for col in semantic_fields), axis=1).tolist()
+    return df
+
 
 def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
     persist_path=os.path.join(BASE_DIR, persist_path)
@@ -44,3 +52,11 @@ def preprocess_query(query, persist_path="./vector_store", collection_name="trac
     results = collection.query(query_embeddings=[query_embedding], n_results=7)
     retrieved_data = "\n".join(results['documents'][0])
     return retrieved_data
+def preprocess_query_without_embedding(video_id):
+    csv_path=os.path.join(os.path.pardir,'DataProccessor','Video'+str(video_id),'tracked_objects.csv')
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path)
+        df=preprocess_data_without_embedding(df)
+        return df.head(10)
+    else:
+        return ''
