@@ -99,7 +99,8 @@ def chatWithOllama(query: str) -> str:
     Returns:
         str: The result of either tool execution or Ollama's response.
     """
-    Context = preprocess_query(query)
+    Context = preprocess_query_without_embedding(1)
+    print(Context)
 
     messages = [
         {

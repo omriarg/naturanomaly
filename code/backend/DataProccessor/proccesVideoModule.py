@@ -37,4 +37,3 @@ def process_video(video_url):
             return f"{str(e)}. Make sure the URL is a valid Google Drive URL and the permissions are set to public."
     else:
         return "Video has been processed already."
-process_video('https://drive.google.com/uc?id=1X6QN3wLnglkqTOL-bbVVWvq1RKsTIXY0')

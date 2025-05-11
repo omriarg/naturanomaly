@@ -66,7 +66,7 @@ def track_objects(result, bboxes, labels, confidences, tracked_objects, bbox_pat
             'object_name': object_name,
             'time_date': time_date,
             'bbox_image_path': bbox_image_path,
-            'confidence': np.max(confidence)
+            'confidence': np.max(confidence),
         }
     return tracked_objects
 
@@ -323,3 +323,13 @@ def main(video_url,video_folder_path):
     download_missing_video_files(video_link=video_url, video_name_routine=video_name_routine)
     run_main_routine_loop(video_name_routine,video_folder_path)
     run_main_anomaly_loop(video_name_routine,video_folder_path)
+    csv_filename = os.path.join(video_folder_path, 'tracked_objects.csv')
+    if os.path.exists(csv_filename):
+        # Read the CSV file into a DataFrame
+        df = pd.read_csv(csv_filename)
+
+        # Drop rows where 'score' is NaN
+        df_cleaned = df.dropna(subset=['score'])
+
+        # Resave the cleaned DataFrame back to the CSV file
+        df_cleaned.to_csv(csv_filename, index=False)
