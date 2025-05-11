@@ -15,7 +15,7 @@ class MyVanna(ChromaDB_VectorStore, Ollama):
 
 vn = MyVanna(config={
     'model': 'llama3.2:3b',
-    'persist_directory': os.path.join(BASE_DIR,'vector_store')
+    'path': os.path.join(BASE_DIR,'vector_store')
 })
 # Load CSV as DataFrame
 df = pd.read_csv(os.path.join(BASE_DIR,'tracked_objects.csv'))

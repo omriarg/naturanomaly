@@ -1,8 +1,9 @@
 import os
 import pickle
-PROCESSED_URLS_FILE = os.path.join('processed_urls.pkl')
 from .main import *
-
+from django.conf import settings
+BASE_DIR=os.path.join(settings.BASE_DIR,'DataProccessor')
+PROCESSED_URLS_FILE = os.path.join(BASE_DIR,'processed_urls.pkl')
 def save_processed_urls(processed_urls):
     """
     Saves the list of processed URLs to the pickle file.
