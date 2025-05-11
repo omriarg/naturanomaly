@@ -30,7 +30,7 @@ def process_video(video_url):
             main(video_url, processed_video_folder)
             processed_urls.append(video_url)
             save_processed_urls(processed_urls)
-            return {'csv_path':os.path.join(processed_video_folder,f'Video{len(processed_urls)}'),'video_id':len(processed_urls),'url':video_url}
+            return {'csv_path':os.path.join(processed_video_folder,f'Video{len(processed_urls)}','tracked_objects.csv'),'video_id':len(processed_urls),'url':video_url}
         except Exception as e:
             # If there is an error with downloading, catch the exception
             return f"{str(e)}. Make sure the URL is a valid Google Drive URL and the permissions are set to public."

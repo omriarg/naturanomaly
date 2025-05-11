@@ -150,7 +150,7 @@ def anomalies_in_region(tracked_objects_df, x1, y1, x2, y2, threshold=2.0):
     def is_inside_region(bbox):
         bbox = ast.literal_eval(bbox)  # safely parse string list
         bx1, by1, bx2, by2 = bbox
-        # Check if any part of the bbox is inside the region
+        #Check if any part of the bbox is inside the region
         return not (bx2 < x1 or bx1 > x2 or by2 < y1 or by1 > y2)
 
     anomalies = tracked_objects_df[
