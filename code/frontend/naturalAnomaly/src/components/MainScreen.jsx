@@ -3,12 +3,19 @@ import ChatWindow from './ChatWindow.jsx';
 import UploadVideo from './UploadVideo.jsx';
 import VideoPlayer from './VideoPlayer.jsx';
 import { Box } from '@mui/material';
+import ThumbnailsLibrary from './ThumbnailsLibrary'; // ייבוא הקומפוננטה החדשה
 
 const MainScreen = () => {
   const [videoUrl, setVideoUrl] = useState(null);
+  const [thumbnails, setThumbnails] = useState([]); // ניהול התמונות
 
   const handleVideoUpload = (url) => {
     setVideoUrl(url);
+  };
+
+  // פונקציה להוספת תמונת חום חדשה לספרייה
+  const addThumbnail = (image) => {
+    setThumbnails((prev) => [...prev, image]);
   };
 
   return (
@@ -40,12 +47,15 @@ const MainScreen = () => {
       <Box
         sx={{
           flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
           padding: '20px',
           borderLeft: '1px solid #ccc',
           backgroundColor: '#ffffff',
         }}
       >
-        <ChatWindow />
+        <ChatWindow addThumbnail={addThumbnail} />
+        <ThumbnailsLibrary thumbnails={thumbnails} />
       </Box>
     </Box>
   );

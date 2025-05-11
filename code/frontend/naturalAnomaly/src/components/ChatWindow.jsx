@@ -33,47 +33,53 @@ const ChatWindow = () => {
     return cookieValue;
   };
 
-  const sendMessage = useCallback(() => {
-    if (inputMessage.trim() === '') return;
+const sendMessage = useCallback(() => {
+  if (inputMessage.trim() === '') return;
 
-    const newMessage = {
-      sender: 'user',
-      content: inputMessage,
-    };
+  const newMessage = {
+    sender: 'user',
+    content: inputMessage,
+  };
 
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
-    setInputMessage('');
+  setMessages((prevMessages) => [...prevMessages, newMessage]);
+  setInputMessage('');
 
-    fetch('api/query-ollama/', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')  // הוסף את ה-CSRF token כאן
-      },
-      body: JSON.stringify({ message: inputMessage }),
+  fetch('api/query-ollama/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCookie('csrftoken'),
+    },
+    body: JSON.stringify({ message: inputMessage }),
+  })
+    .then((res) => {
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      return res.json();
     })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then((data) => {
-        const botMessage = {
-          sender: 'bot',
-          content: data.response,
-        };
-        setMessages((prevMessages) => [...prevMessages, botMessage]);
-      })
-      .catch((error) => {
-        console.error('Fetch error:', error);
-        const errorMessage = {
-          sender: 'bot',
-          content: 'שגיאה בשרת, נסה שוב מאוחר יותר.',
-        };
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
-      });
-  }, [inputMessage]);
+    .then((data) => {
+      const botMessage = {
+        sender: 'bot',
+        content: data.response,
+      };
+
+      setMessages((prevMessages) => [...prevMessages, botMessage]);
+
+      // אם ההודעה מהבוט היא תמונה - הוסף לספריית התמונות
+      if (data.image) {
+        addThumbnail(data.image); // כאן אנו מוסיפים את התמונה
+      }
+    })
+    .catch((error) => {
+      console.error('Fetch error:', error);
+      const errorMessage = {
+        sender: 'bot',
+        content: 'שגיאה בשרת, נסה שוב מאוחר יותר.',
+      };
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+    });
+}, [inputMessage]);
 
   return (
     <Paper sx={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
