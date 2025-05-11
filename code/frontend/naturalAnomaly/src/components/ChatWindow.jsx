@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, TextField, Paper, Typography, Button } from '@mui/material';
 
-const ChatWindow = () => {
+const ChatWindow = ({ addThumbnail }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
@@ -18,78 +18,49 @@ const ChatWindow = () => {
     scrollToBottom();
   }, [messages]);
 
-  const getCookie = (name) => {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
+  const sendMessage = useCallback(() => {
+    if (inputMessage.trim() === '') return;
+
+    const newMessage = {
+      sender: 'user',
+      content: inputMessage,
+    };
+
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    setInputMessage('');
+
+    fetch('api/query-ollama/', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ message: inputMessage }),
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        const botMessage = {
+          sender: 'bot',
+          content: data.response,
+        };
+        setMessages((prevMessages) => [...prevMessages, botMessage]);
+
+        if (data.image) {
+          addThumbnail(data.image);
         }
-      }
-    }
-    return cookieValue;
-  };
-
-const sendMessage = useCallback(() => {
-  if (inputMessage.trim() === '') return;
-
-  const newMessage = {
-    sender: 'user',
-    content: inputMessage,
-  };
-
-  setMessages((prevMessages) => [...prevMessages, newMessage]);
-  setInputMessage('');
-
-  fetch('api/query-ollama/', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'X-CSRFToken': getCookie('csrftoken'),
-    },
-    body: JSON.stringify({ message: inputMessage }),
-  })
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-      return res.json();
-    })
-    .then((data) => {
-      const botMessage = {
-        sender: 'bot',
-        content: data.response,
-      };
-
-      setMessages((prevMessages) => [...prevMessages, botMessage]);
-
-      // אם ההודעה מהבוט היא תמונה - הוסף לספריית התמונות
-      if (data.image) {
-        addThumbnail(data.image); // כאן אנו מוסיפים את התמונה
-      }
-    })
-    .catch((error) => {
-      console.error('Fetch error:', error);
-      const errorMessage = {
-        sender: 'bot',
-        content: 'שגיאה בשרת, נסה שוב מאוחר יותר.',
-      };
-      setMessages((prevMessages) => [...prevMessages, errorMessage]);
-    });
-}, [inputMessage]);
+      })
+      .catch((error) => {
+        console.error('Fetch error:', error);
+        setMessages((prevMessages) => [...prevMessages, { sender: 'bot', content: 'שגיאה בשרת, נסה שוב מאוחר יותר.' }]);
+      });
+  }, [inputMessage, addThumbnail]);
 
   return (
-    <Paper sx={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Paper sx={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
       <Box sx={{ flex: 1, overflowY: 'auto', marginBottom: '10px' }}>
         {messages.map((msg, index) => (
-          <Box key={index} sx={{ display: 'flex', marginBottom: '10px' }}>
-            <Typography variant="body1" sx={{ fontWeight: msg.sender === 'user' ? 'bold' : 'normal' }}>
-              {msg.sender === 'user' ? 'אתה: ' : 'הבוט: '} {msg.content}
-            </Typography>
-          </Box>
+          <Typography key={index} variant="body1" sx={{ margin: '5px 0', fontWeight: msg.sender === 'user' ? 'bold' : 'normal' }}>
+            {msg.sender === 'user' ? 'אתה: ' : 'הבוט: '} {msg.content}
+          </Typography>
         ))}
         <div ref={messagesEndRef} />
       </Box>
@@ -101,9 +72,7 @@ const sendMessage = useCallback(() => {
         label="הקלד הודעה"
         sx={{ marginBottom: '10px' }}
       />
-      <Button onClick={sendMessage} variant="contained" fullWidth>
-        שלח
-      </Button>
+      <Button onClick={sendMessage} variant="contained" fullWidth>שלח</Button>
     </Paper>
   );
 };
