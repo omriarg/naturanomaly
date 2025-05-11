@@ -53,7 +53,7 @@ def preprocess_query(query, persist_path="./vector_store", collection_name="trac
     retrieved_data = "\n".join(results['documents'][0])
     return retrieved_data
 def preprocess_query_without_embedding(video_id=1):
-    csv_path=os.path.join(os.path.pardir,'DataProccessor','Video'+str(video_id),'tracked_objects.csv')
+    csv_path=os.path.join(settings.BASE_DIR,'DataProccessor','Video'+str(video_id),'tracked_objects.csv')
     if os.path.exists(csv_path):
          df = pd.read_csv(csv_path)
          df=  preprocess_data_without_embedding(df)
