@@ -57,6 +57,6 @@ def preprocess_query_without_embedding(video_id=1):
     if os.path.exists(csv_path):
          df = pd.read_csv(csv_path)
          df=  preprocess_data_without_embedding(df)
-         return df.head(10)
+         return df.head(5)
     else:
         return ''
