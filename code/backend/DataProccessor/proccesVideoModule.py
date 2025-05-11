@@ -21,7 +21,7 @@ def load_processed_urls():
     return []
 def process_video(video_url):
     processed_urls = load_processed_urls()
-    processed_video_folder = os.path.join('processed_video', f'Video{len(processed_urls) + 1}')
+    processed_video_folder = os.path.join(BASE_DIR,'processed_video', f'Video{len(processed_urls) + 1}')
 
     if video_url not in processed_urls:
         if not os.path.exists(processed_video_folder):
@@ -37,3 +37,4 @@ def process_video(video_url):
             return f"{str(e)}. Make sure the URL is a valid Google Drive URL and the permissions are set to public."
     else:
         return "Video has been processed already."
+process_video('https://drive.google.com/uc?id=1X6QN3wLnglkqTOL-bbVVWvq1RKsTIXY0')

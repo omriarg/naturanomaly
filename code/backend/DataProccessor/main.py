@@ -12,7 +12,8 @@ from pathlib import Path
 from ultralytics import YOLO
 import os
 import gdown
-
+from django.conf import settings
+BASE_DIR=os.path.join(settings.BASE_DIR,'DataProccessor')
 
 def download_missing_video_files(video_link=None,
                                  video_name_routine=None):
@@ -99,7 +100,7 @@ def build_detections_and_routine_map(tracked_objects, routine_map, width, height
 
 def init_system(video_path,video_folder_path):
     # Initialize YOLOv8 model
-    model = YOLO('yolov8n.pt')
+    model = YOLO('yolov8n.pt',path=BASE_DIR)
 
     # set path for the bounding box images as ./bbox_images and create if doesn't exists
     bbox_path = os.path.join(video_folder_path,'bbox_images')
@@ -179,8 +180,8 @@ def run_main_routine_loop(video_path,video_folder_path):
 
 
         # show results (original frame, detection fame, noamalized routine_map as colormap_jet  # keep in comment for github
-        cv2.imshow('Frame', result.plot())
-        cv2.imshow('Detections', output_frame)
+        # cv2.imshow('Frame', result.plot())
+        # cv2.imshow('Detections', output_frame)
         routine_map_display = (routine_map/np.max(routine_map)*255).astype(np.uint8)
         routine_map_display = cv2.applyColorMap(routine_map_display, cv2.COLORMAP_JET)
         cv2.imwrite(os.path.join(video_folder_path,'heat_map_display.png'), routine_map_display)
@@ -248,8 +249,8 @@ def anomaly_detection(tracked_objects, routine_map, result, height=None, width=N
     out.write(output_frame)
 
     # show results
-    cv2.imshow('Frame', result.plot())
-    cv2.imshow('anomaly frame', output_frame)
+    # cv2.imshow('Frame', result.plot())
+    # cv2.imshow('anomaly frame', output_frame)
 
     return tracked_objects
 

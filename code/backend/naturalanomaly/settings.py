@@ -28,6 +28,7 @@ ALLOWED_HOSTS = ['127.0.0.1', 'localhost','localhost:5173']
 
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:5173',
+
 ]
 
 # Application definition
