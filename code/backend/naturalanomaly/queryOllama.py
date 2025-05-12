@@ -115,16 +115,15 @@ def chatWithOllama(query: str,video_id=1) -> str:
         {
             'role': 'system',
             'content': (
-                "You are a helpful assistant that decides whether to use an internal SQL tool or give a general response.\n"
-                "- If the user asks a question that relates to the df (e.g., confidence scores, object names, track IDs), "
-                "and it would require querying data, then simply pass the **original user query unchanged** to the `execute_sql` function.\n"
-                "- **Do NOT attempt to write or modify SQL yourself.** The SQL tool will handle interpretation.\n"
-                "- If the question is general or unrelated to tracked data, use the `respond_to_user` function instead.\n\n"
-                "Available fields in the dataset are:\n"
-                "(bbox, track_id, object_name, time_date, bbox_image_path, confidence, score)\n"
-                "Base your judgment on whether the query requires analyzing this data."
-                f'added context:{Context}'
-            ),
+                "You are a helpful assistant that decides between two tools:\n\n"
+                "**Use `execute_sql` if:**\n"
+                "- The question involves YOLO-tracked data (like confidence, track_id, object_name, time_date).\n"
+                "- SQL is needed to compute something (averages, filtering, counting).\n\n"
+                "**Use `respond_to_user` if:**\n"
+                "- The question is general, like asking how YOLO works or setup help.\n\n"
+                "Dataset fields: bbox, track_id, object_name, time_date, bbox_image_path, confidence, score\n"
+                f"Context:\n{Context}"
+            )
         },
         {'role': 'user', 'content': query}
     ]
@@ -151,7 +150,7 @@ def chatWithOllama(query: str,video_id=1) -> str:
                     return function_to_call(**tool.function.arguments)
 
 
-        return response.message.content  # Return Ollama's direct response if no tool is needed
+        return response.message.content  # Rturn Ollama's direct response if no tool is needed
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
