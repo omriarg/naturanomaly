@@ -1,5 +1,5 @@
 .idea
 __pycache__
 venv
-DataProccessor/bbox_images
+code/backend/DataProccessor/bbox_images
 .venv

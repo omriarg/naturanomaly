@@ -4,6 +4,8 @@ from vanna.ollama import Ollama
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from .cleanData import *
 import os
+import ast
+
 # Define a custom Vanna class combining Ollama and ChromaDB
 class MyVanna(ChromaDB_VectorStore, Ollama):
     def __init__(self, config=None):
@@ -13,7 +15,7 @@ class MyVanna(ChromaDB_VectorStore, Ollama):
 
 vn = MyVanna(config={
     'model': 'llama3.2:3b',
-    'persist_directory': os.path.join(BASE_DIR,'vector_store')
+    'path': os.path.join(BASE_DIR,'vector_store')
 })
 # Load CSV as DataFrame
 df = pd.read_csv(os.path.join(BASE_DIR,'tracked_objects.csv'))
@@ -97,7 +99,8 @@ def chatWithOllama(query: str) -> str:
     Returns:
         str: The result of either tool execution or Ollama's response.
     """
-    Context = preprocess_query(query)
+    Context = preprocess_query_without_embedding(1)
+    print(Context)
 
     messages = [
         {
@@ -143,3 +146,16 @@ def chatWithOllama(query: str) -> str:
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
+
+def anomalies_in_region(tracked_objects_df, x1, y1, x2, y2, threshold=2.0):
+    def is_inside_region(bbox):
+        bbox = ast.literal_eval(bbox)  # safely parse string list
+        bx1, by1, bx2, by2 = bbox
+        #Check if any part of the bbox is inside the region
+        return not (bx2 < x1 or bx1 > x2 or by2 < y1 or by1 > y2)
+
+    anomalies = tracked_objects_df[
+        (tracked_objects_df['log_likelihood_score'] > threshold) &
+        (tracked_objects_df['bbox'].apply(is_inside_region))
+        ]
+    return anomalies

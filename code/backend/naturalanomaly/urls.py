@@ -20,4 +20,5 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path("api/query-ollama/", views.queryOllama, name="queryOllama"),
+    path("api/process-video/", views.process_video, name="process-video"),
 ]
