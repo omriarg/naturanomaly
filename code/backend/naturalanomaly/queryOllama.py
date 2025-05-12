@@ -6,60 +6,68 @@ from .cleanData import *
 import os
 import ast
 
+vn = None
+df = None
+current_video_id = None
+VIDEO_DIR = os.path.join(settings.BASE_DIR, 'DataProccessor', 'processed_video')
 # Define a custom Vanna class combining Ollama and ChromaDB
 class MyVanna(ChromaDB_VectorStore, Ollama):
     def __init__(self, config=None):
         ChromaDB_VectorStore.__init__(self, config=config)
         Ollama.__init__(self, config=config)
 # Initialize Vanna with model and ChromaDB vector store
+def set_video_context(video_id=1):
+    global vn, df, current_video_id
 
-vn = MyVanna(config={
-    'model': 'llama3.2:3b',
-    'path': os.path.join(BASE_DIR,'vector_store')
-})
-# Load CSV as DataFrame
-df = pd.read_csv(os.path.join(BASE_DIR,'tracked_objects.csv'))
-# Define SQL runner on DataFrame using pandasql
-def run_sql(sql):
-    try:
-        return psql.sqldf(sql, {'df': df})
-    except Exception as e:
-        print(f"SQL execution error: {e}")
-        return pd.DataFrame()
-# Register run_sql with Vanna
-vn.run_sql = run_sql
-vn.run_sql_is_set = True
-print("DataFrame connected and SQL runner set.")
+    if current_video_id == video_id:
+        return  # already loaded
 
-# Train Vanna with questions and SQL queries
-training_data = [
-    ("Which track_id had the lowest confidence score?",
-     "SELECT track_id, MIN(confidence) AS lowest_confidence FROM df GROUP BY track_id ORDER BY lowest_confidence ASC LIMIT 1;"),
+    print(f"Loading data for video_id={video_id}")
+    current_video_id = video_id
 
-    ("What are the top 5 object types by average confidence?",
-     "SELECT object_name, AVG(confidence) AS avg_confidence FROM df GROUP BY object_name ORDER BY avg_confidence DESC LIMIT 5;"),
+    vn = MyVanna(config={
+        'model': 'llama3.2:3b',
+        'path': os.path.join(BASE_DIR, 'vector_store')
+    })
 
-    ("What is the average score for each track_id?",
-     "SELECT track_id, AVG(score) AS avg_score FROM df GROUP BY track_id ORDER BY avg_score DESC;"),
+    df = pd.read_csv(os.path.join(VIDEO_DIR, f'Video{video_id}', 'tracked_objects.csv'))
 
-    ("How many unique object types were detected?",
-     "SELECT COUNT(DISTINCT object_name) AS unique_object_types FROM df;"),
+    # SQL Runner
+    def run_sql(sql):
+        try:
+            return psql.sqldf(sql, {'df': df})
+        except Exception as e:
+            print(f"SQL execution error: {e}")
+            return pd.DataFrame()
 
-    ("Which track_id had the most recent detection?",
-     "SELECT track_id, MAX(time_date) AS last_seen FROM df GROUP BY track_id ORDER BY last_seen DESC LIMIT 1;"),
+    vn.run_sql = run_sql
+    vn.run_sql_is_set = True
 
-    ("What is the average confidence score across the dataset?",
-     "SELECT AVG(confidence) AS overall_avg_confidence FROM df;")
-]
-
-for question, sql in training_data:
-    vn.train(question=question, sql=sql)
+    # Training
+    training_data = [
+        ("Which track_id had the lowest confidence score?",
+         "SELECT track_id, MIN(confidence) AS lowest_confidence FROM df GROUP BY track_id ORDER BY lowest_confidence ASC LIMIT 1;"),
+        ("What are the top 5 object types by average confidence?",
+         "SELECT object_name, AVG(confidence) AS avg_confidence FROM df GROUP BY object_name ORDER BY avg_confidence DESC LIMIT 5;"),
+        ("What is the average score for each track_id?",
+         "SELECT track_id, AVG(score) AS avg_score FROM df GROUP BY track_id ORDER BY avg_score DESC;"),
+        ("How many unique object types were detected?",
+         "SELECT COUNT(DISTINCT object_name) AS unique_object_types FROM df;"),
+        ("Which track_id had the most recent detection?",
+         "SELECT track_id, MAX(time_date) AS last_seen FROM df GROUP BY track_id ORDER BY last_seen DESC LIMIT 1;"),
+        ("What is the average confidence score across the dataset?",
+         "SELECT AVG(confidence) AS overall_avg_confidence FROM df;"),
+        ("What is the busiest time?",
+         "SELECT time_date, COUNT(*) AS detection_count FROM df GROUP BY time_date ORDER BY detection_count DESC LIMIT 1;")
+    ]
+    for question, sql in training_data:
+        vn.train(question=question, sql=sql)
 
 def execute_sql(query):
     try:
         print(query)
         result = vn.generate_sql(query,allow_llm_to_see_data=True)
-        return run_sql(result).to_string()
+        return vn.run_sql(result).to_string()
     except Exception as e:
         return f"Error in vn.ask: {e}"
 
@@ -89,19 +97,20 @@ def respond_to_user(query: str) -> str:
         return f"Error during Ollama API call: {e}"
 
 
-def chatWithOllama(query: str) -> str:
+def chatWithOllama(query: str,video_id=1) -> str:
     """
     Query Ollama with a user prompt and determine whether to use an SQL tool or a direct response.
-
     Args:
         query (str): The user's input question.
-
     Returns:
         str: The result of either tool execution or Ollama's response.
     """
-    Context = preprocess_query_without_embedding(1)
-    print(Context)
-
+    if(vn is None or video_id!=current_video_id):
+        set_video_context(video_id=video_id)
+    if(video_id==1):
+        Context = preprocess_query(query) #use embedded data for default video
+    else:
+        Context=preprocess_query_without_embedding(video_id=video_id)#get some lines from DF otherwise
     messages = [
         {
             'role': 'system',

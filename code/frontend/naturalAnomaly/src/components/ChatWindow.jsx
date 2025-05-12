@@ -1,14 +1,26 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Box, TextField, Paper, Typography, Button } from '@mui/material';
 
+// פונקציה לקבלת ה-CSRF Token
+const getCookie = (name) => {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+};
+
 const ChatWindow = () => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef(null);
-
-  const handleInputChange = useCallback((event) => {
-    setInputMessage(event.target.value);
-  }, []);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -18,84 +30,66 @@ const ChatWindow = () => {
     scrollToBottom();
   }, [messages]);
 
-  const getCookie = (name) => {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i].trim();
-        if (cookie.substring(0, name.length + 1) === (name + '=')) {
-          cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-          break;
-        }
-      }
-    }
-    return cookieValue;
-  };
+  // שליחת הודעה לשרת
+  const sendMessage = () => {
+    if (!inputMessage.trim()) return;
 
-  const sendMessage = useCallback(() => {
-    if (inputMessage.trim() === '') return;
-
-    const newMessage = {
-      sender: 'user',
-      content: inputMessage,
-    };
-
-    setMessages((prevMessages) => [...prevMessages, newMessage]);
+    const userMessage = { sender: 'user', content: inputMessage };
+    setMessages((prevMessages) => [...prevMessages, userMessage]);
     setInputMessage('');
 
-    fetch('api/query-ollama/', {
+    fetch('/api/query-ollama/', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'X-CSRFToken': getCookie('csrftoken')  // הוסף את ה-CSRF token כאן
+        'X-CSRFToken': getCookie('csrftoken'),
       },
       body: JSON.stringify({ message: inputMessage }),
     })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return res.json();
+        return response.json();
       })
       .then((data) => {
         const botMessage = {
           sender: 'bot',
-          content: data.response,
+          content: data.response || 'הבוט לא החזיר תשובה.',
         };
         setMessages((prevMessages) => [...prevMessages, botMessage]);
       })
       .catch((error) => {
-        console.error('Fetch error:', error);
-        const errorMessage = {
-          sender: 'bot',
-          content: 'שגיאה בשרת, נסה שוב מאוחר יותר.',
-        };
-        setMessages((prevMessages) => [...prevMessages, errorMessage]);
+        console.error('Error:', error);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { sender: 'bot', content: 'שגיאה בשרת, נסה שוב מאוחר יותר.' },
+        ]);
       });
-  }, [inputMessage]);
+  };
 
   return (
-    <Paper sx={{ padding: '20px', height: '100%', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ flex: 1, overflowY: 'auto', marginBottom: '10px' }}>
+    <Paper sx={{ padding: '20px', height: '300px', display: 'flex', flexDirection: 'column' }}>
+      <Box sx={{ flex: 1, overflowY: 'auto' }}>
         {messages.map((msg, index) => (
-          <Box key={index} sx={{ display: 'flex', marginBottom: '10px' }}>
-            <Typography variant="body1" sx={{ fontWeight: msg.sender === 'user' ? 'bold' : 'normal' }}>
-              {msg.sender === 'user' ? 'אתה: ' : 'הבוט: '} {msg.content}
-            </Typography>
-          </Box>
+          <Typography key={index} variant="body2" sx={{ marginBottom: '5px' }}>
+            {msg.sender === 'user' ? '👤 אתה: ' : '🤖 הבוט: '} {msg.content}
+          </Typography>
         ))}
         <div ref={messagesEndRef} />
       </Box>
       <TextField
         value={inputMessage}
-        onChange={handleInputChange}
+        onChange={(e) => setInputMessage(e.target.value)}
         fullWidth
         variant="outlined"
-        label="הקלד הודעה"
-        sx={{ marginBottom: '10px' }}
+        placeholder="💬 כתוב כאן..."
+        sx={{ marginTop: '10px' }}
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') sendMessage();
+        }}
       />
-      <Button onClick={sendMessage} variant="contained" fullWidth>
+      <Button onClick={sendMessage} variant="contained" sx={{ marginTop: '10px' }}>
         שלח
       </Button>
     </Paper>
