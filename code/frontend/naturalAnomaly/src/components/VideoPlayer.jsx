@@ -1,23 +1,24 @@
 import React from 'react';
-import ReactPlayer from 'react-player';
 import { Paper, Box, Typography } from '@mui/material';
 
-const VideoPlayer = ({ videoUrl }) => {
-  console.log("Video URL:", videoUrl); // בודק אם ה-URL תקין
-  if (!videoUrl) return null; // אם לא הוגדר URL, אל תציג כלום
+const VideoPlayer = () => {
+  const videoUrl = 'https://drive.google.com/file/d/1yldzCAxewb4NG4yhiOmjY9unFKFufhaX/preview';
+
+  console.log("Video URL:", videoUrl);  // הצגת נתיב הסרטון בקונסול
 
   return (
     <Paper sx={{ padding: '10px', marginBottom: '20px' }}>
       <Typography variant="h6" gutterBottom>
-        הצגת סרטון
+        🎥 הצגת סרטון
       </Typography>
       <Box sx={{ maxWidth: '100%', display: 'flex', justifyContent: 'center' }}>
-        <ReactPlayer
-          url={videoUrl}
-          controls={true}
+        <iframe
+          src={videoUrl}
           width="100%"
-          height="auto"
-        />
+          height="500px"
+          allow="autoplay"
+          title="Video Player"
+        ></iframe>
       </Box>
     </Paper>
   );
