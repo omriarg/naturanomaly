@@ -116,8 +116,8 @@ def chatWithOllama(query: str,video_id=1) -> str:
             'role': 'system',
             'content': (
                 "You are a helpful assistant that decides between two tools:\n\n"
-                "**Use `execute_sql` if:**\n"
-                "- The question involves YOLO-tracked data (like confidence, track_id, object_name, time_date).\n"
+                "**call `execute_sql` if:**\n"
+                "- The question involves YOLO-tracked data;or (like confidence, track_id, object_name, time_date).\n"
                 "- SQL is needed to compute something (averages, filtering, counting).\n\n"
                 "**Use `respond_to_user` if:**\n"
                 "- The question is general, like asking how YOLO works or setup help.\n\n"
@@ -154,16 +154,27 @@ def chatWithOllama(query: str,video_id=1) -> str:
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
+def parse_bbox(bbox_str):
+    # bbox_str example: "[428, 495, 523, 576]"
+    return ast.literal_eval(bbox_str)  # converts string to list of ints
 
-def anomalies_in_region(tracked_objects_df, x1, y1, x2, y2, threshold=2.0):
-    def is_inside_region(bbox):
-        bbox = ast.literal_eval(bbox)  # safely parse string list
+def anomalies_in_region(df, x1, y1, x2, y2, threshold=0.8):
+    """
+    Returns list of anomalies in df whose bbox overlaps given region and
+    whose score exceeds threshold.
+    """
+    anomalies = []
+
+    def bbox_inside_region(bbox):
         bx1, by1, bx2, by2 = bbox
-        #Check if any part of the bbox is inside the region
+        # Check if bbox overlaps with the region
         return not (bx2 < x1 or bx1 > x2 or by2 < y1 or by1 > y2)
 
-    anomalies = tracked_objects_df[
-        (tracked_objects_df['log_likelihood_score'] > threshold) &
-        (tracked_objects_df['bbox'].apply(is_inside_region))
-        ]
+    for idx, row in df.iterrows():
+        bbox = parse_bbox(row['bbox'])
+        score = row['score']
+
+        if score > threshold and bbox_inside_region(bbox):
+            anomalies.append(row.to_dict())
+
     return anomalies
