@@ -9,7 +9,7 @@ const MainScreen = () => {
     <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: 3 }}>
       {/* כותרת עליונה */}
       <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold' }}>
-        NaturalAnomaly - your AI ass
+        NATURALANOMALY – ניתוח חכם של אנומליות בזמן אמת
       </Typography>
 
       {/* וידאו */}
