@@ -30,7 +30,6 @@ const ChatWindow = () => {
     scrollToBottom();
   }, [messages]);
 
-  // שליחת הודעה לשרת
   const sendMessage = () => {
     if (!inputMessage.trim()) return;
 
@@ -69,8 +68,11 @@ const ChatWindow = () => {
   };
 
   return (
-    <Paper sx={{ padding: '20px', height: '300px', display: 'flex', flexDirection: 'column' }}>
-      <Box sx={{ flex: 1, overflowY: 'auto' }}>
+    <Paper sx={{ padding: '20px', display: 'flex', flexDirection: 'column' }}>
+      <Typography variant="h6" gutterBottom>
+        💬 צ'אט
+      </Typography>
+      <Box sx={{ flex: 1, overflowY: 'auto', minHeight: '200px', marginBottom: 2 }}>
         {messages.map((msg, index) => (
           <Typography key={index} variant="body2" sx={{ marginBottom: '5px' }}>
             {msg.sender === 'user' ? '👤 אתה: ' : '🤖 הבוט: '} {msg.content}
@@ -84,7 +86,6 @@ const ChatWindow = () => {
         fullWidth
         variant="outlined"
         placeholder="💬 כתוב כאן..."
-        sx={{ marginTop: '10px' }}
         onKeyPress={(e) => {
           if (e.key === 'Enter') sendMessage();
         }}

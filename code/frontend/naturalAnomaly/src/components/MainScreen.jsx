@@ -1,68 +1,35 @@
-import React, { useState } from 'react';
-import ChatWindow from './ChatWindow';
-import UploadVideo from './UploadVideo';
+import React from 'react';
+import { Box, Grid, Typography, Paper } from '@mui/material';
 import VideoPlayer from './VideoPlayer';
-import { Box } from '@mui/material';
-import ThumbnailsLibrary from './ThumbnailsLibrary';
+import HeatmapDisplay from './HeatmapDisplay';
+import ChatWindow from './ChatWindow';
 
 const MainScreen = () => {
-  const [videoUrl, setVideoUrl] = useState(null);
-  const [thumbnails, setThumbnails] = useState([]);
-
-  const handleVideoUpload = (url) => {
-    setVideoUrl(url);
-  };
-
-  const addThumbnail = (image) => {
-    setThumbnails((prev) => [...prev, image]);
-  };
-
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        height: '100vh',
-        backgroundColor: '#f0f0f0',
-        padding: '20px',
-        gap: '20px',
-      }}
-    >
-      {/* אזור הווידאו – צד ימין */}
-      <Box
-        sx={{
-          flex: 2.5,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-          justifyContent: 'center',
-          alignItems: 'center',
-          backgroundColor: '#ffffff',
-          padding: '15px',
-          borderRadius: '10px',
-        }}
-      >
-        {videoUrl ? (
-          <VideoPlayer videoUrl={videoUrl} />
-        ) : (
-          <Box sx={{ textAlign: 'center', color: '#888' }}>
-            📽️ מחכה לסרטון שלך כאן!
-          </Box>
-        )}
-        <UploadVideo onUpload={handleVideoUpload} />
-      </Box>
+    <Box sx={{ backgroundColor: '#f5f5f5', minHeight: '100vh', padding: 3 }}>
+      {/* כותרת עליונה */}
+      <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold' }}>
+        NaturalAnomaly - your AI ass
+      </Typography>
 
-      {/* אזור הצ'אט והספרייה – צד שמאל */}
-      <Box
-        sx={{
-          flex: 1.5,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: '20px',
-        }}
-      >
-        <ChatWindow />
-        <ThumbnailsLibrary thumbnails={thumbnails} addThumbnail={addThumbnail} />
-      </Box>
+      {/* וידאו */}
+      <Paper elevation={3} sx={{ padding: 2, borderRadius: 3, marginBottom: 3 }}>
+        <VideoPlayer />
+      </Paper>
+
+      {/* Heatmap + Chat */}
+      <Grid container spacing={3}>
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ padding: 2, borderRadius: 3, height: '100%' }}>
+            <HeatmapDisplay />
+          </Paper>
+        </Grid>
+        <Grid item xs={12} md={6}>
+          <Paper elevation={3} sx={{ padding: 2, borderRadius: 3, height: '100%' }}>
+            <ChatWindow />
+          </Paper>
+        </Grid>
+      </Grid>
     </Box>
   );
 };
