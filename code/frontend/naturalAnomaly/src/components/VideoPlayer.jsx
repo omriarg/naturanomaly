@@ -1,23 +1,22 @@
 import React from 'react';
-import { Paper, Box, Typography } from '@mui/material';
+import { Box, Paper, Typography } from '@mui/material';
 
 const VideoPlayer = () => {
   const videoUrl = 'https://drive.google.com/file/d/1yldzCAxewb4NG4yhiOmjY9unFKFufhaX/preview';
 
-  console.log("Video URL:", videoUrl);  // הצגת נתיב הסרטון בקונסול
-
   return (
-    <Paper sx={{ padding: '10px', marginBottom: '20px' }}>
+    <Paper elevation={3} sx={{ padding: 2, borderRadius: 3 }}>
       <Typography variant="h6" gutterBottom>
-        🎥 הצגת סרטון
+        🎥 סרטון וידאו
       </Typography>
-      <Box sx={{ maxWidth: '100%', display: 'flex', justifyContent: 'center' }}>
+      <Box sx={{ width: '100%' }}>
         <iframe
           src={videoUrl}
           width="100%"
-          height="500px"
+          height="400px"
           allow="autoplay"
           title="Video Player"
+          style={{ border: 'none', borderRadius: '12px' }}
         ></iframe>
       </Box>
     </Paper>
