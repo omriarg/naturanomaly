@@ -70,6 +70,98 @@ def execute_sql(query):
         return vn.run_sql(result).to_string()
     except Exception as e:
         return f"Error in vn.ask: {e}"
+def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
+    if vn is None or video_id != current_video_id:
+        set_video_context(video_id=video_id)
+
+    if not bbox:
+       return "Error: No bounding box (ROI) provided."
+
+    try:
+        x1, y1, x2, y2 = bbox
+    except Exception as e:
+        return f"Invalid bounding box format: {e}"
+
+    region_df = pd.DataFrame(anomalies_in_region(df, x1, y1, x2, y2))
+    if region_df.empty:
+        return "No data available in the selected region this is a dead zone."
+
+    # Use keywords to infer what the user wants
+    is_history = "all people" in query.lower() or "past week" in query.lower()
+    context = summarize_roi_events(region_df, full_history=is_history)
+    print(context)
+    messages = [
+        {
+            'role': 'system',
+            'content': (
+                "You are a helpful assistant that analyzes YOLO-based surveillance data. "
+                "You answer based on structured object detection logs.\n"
+                "- Use SQL if the user asks about counts, filters, or stats.\n"
+                "- Otherwise, use the summary provided in context.\n\n"
+                "Fields available: bbox, track_id, object_name, time_date, confidence, score\n\n"
+                f"Context from coordinates {bbox}:\n{context}"
+            )
+        },
+        {'role': 'user', 'content': query}
+    ]
+
+    try:
+        response = ollama.chat(
+            model='llama3.2',
+            messages=messages,
+        )
+
+        # if response.message.tool_calls:
+        #     for tool in response.message.tool_calls:
+        #         function_to_call = {
+        #             'execute_sql': execute_sql,
+        #             'respond_to_user': respond_to_user
+        #         }.get(tool.function.name)
+        #         if function_to_call:
+        #             return function_to_call(**tool.function.arguments)
+
+        return response.message.content
+
+    except Exception as e:
+        return f"Error during Ollama call: {e}"
+def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5, full_history: bool = False) -> str:
+    """
+    Summarize the most anomalous or all tracked events in a region of interest (ROI).
+    Args:
+        region_df (pd.DataFrame): Data filtered by bounding box.
+        top_n (int): Number of top anomalies to include (if not full_history).
+        full_history (bool): If True, include all events in the region.
+
+    Returns:
+        str: A descriptive summary of events or anomalies.
+    """
+    if region_df.empty:
+        return "No tracked objects found in the selected region."
+
+    # Use top anomalies or full event list
+    if full_history:
+        df = region_df.sort_values(by="time_date")
+    else:
+        df = region_df.sort_values(by="score", ascending=False).head(top_n)
+
+    summaries = []
+    for i, (_, row) in enumerate(df.iterrows(), 1):
+        try:
+            timestamp = row.get('time_date', 'unknown time')
+            object_name = row.get('object_name', 'unknown object')
+            track_id = row.get('track_id', 'N/A')
+            confidence = float(row.get('confidence', 0))
+            score = float(row.get('score', 0))
+            bbox = row.get('bbox', '[bbox missing]')
+            summary = (
+                f"{i}. At **{timestamp}**, a **{object_name}** (track ID `{track_id}`) "
+                f"was detected at **{bbox}** with confidence **{confidence:.2f}** and anomaly score **{score:.2f}**."
+            )
+            summaries.append(summary)
+        except Exception as e:
+            summaries.append(f"{i}. (Error parsing row: {e})")
+
+    return "\n".join(summaries)
 
 def respond_to_user(query: str) -> str:
     """
@@ -168,7 +260,9 @@ def anomalies_in_region(df, x1, y1, x2, y2, threshold=0.8):
     def bbox_inside_region(bbox):
         bx1, by1, bx2, by2 = bbox
         # Check if bbox overlaps with the region
-        return not (bx2 < x1 or bx1 > x2 or by2 < y1 or by1 > y2)
+        return  bx2 >= x1 and bx1 <= x2 and by2 >= y1  and by1 <= y2
+
+
 
     for idx, row in df.iterrows():
         bbox = parse_bbox(row['bbox'])
