@@ -72,7 +72,6 @@ def execute_sql(query):
 def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
     if vn is None or video_id != current_video_id:
         set_video_context(video_id=video_id)
-
     if not bbox:
        return "Error: No bounding box (ROI) provided."
 
@@ -86,8 +85,12 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
         return "No data available in the selected region this is a dead zone."
 
     # Use keywords to infer what the user wants
-    is_history = "all people" in query.lower() or "past week" in query.lower()
-    context = summarize_roi_events(region_df, full_history=is_history)
+    lowercase_query=query.lower()
+    full_history = "all people" in lowercase_query or "past week" in lowercase_query or "list all" in lowercase_query
+    if(full_history):#user wants full history of region return df
+        df = region_df.sort_values(by="time_date")
+        return df
+    context = summarize_roi_events(region_df)
     print(context)
     messages = [
         {
@@ -123,7 +126,7 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
 
     except Exception as e:
         return f"Error during Ollama call: {e}"
-def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5, full_history: bool = False) -> str:
+def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5) -> str:
     """
     Summarize the most anomalous or all tracked events in a region of interest (ROI).
     Args:
@@ -138,10 +141,7 @@ def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5, full_history: 
         return "No tracked objects found in the selected region."
 
     # Use top anomalies or full event list
-    if full_history:
-        df = region_df.sort_values(by="time_date")
-    else:
-        df = region_df.sort_values(by="score", ascending=False).head(top_n)
+    df = region_df.sort_values(by="score", ascending=False).head(top_n)
 
     summaries = []
     for i, (_, row) in enumerate(df.iterrows(), 1):
