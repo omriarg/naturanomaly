@@ -65,7 +65,6 @@ def set_video_context(video_id=1):
 
 def execute_sql(query):
     try:
-        print(query)
         result = vn.generate_sql(query,allow_llm_to_see_data=True)
         return vn.run_sql(result).to_string()
     except Exception as e:
