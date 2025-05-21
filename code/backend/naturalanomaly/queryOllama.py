@@ -88,8 +88,7 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
     lowercase_query=query.lower()
     full_history = "all people" in lowercase_query or "past week" in lowercase_query or "list all" in lowercase_query
     if(full_history):#user wants full history of region return df
-        df = region_df.sort_values(by="time_date")
-        return df
+        return region_df.sort_values(by="time_date")
     context = summarize_roi_events(region_df)
     print(context)
     messages = [
@@ -101,6 +100,7 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
                 "- Use SQL if the user asks about counts, filters, or stats.\n"
                 "- Otherwise, use the summary provided in context.\n\n"
                 "Fields available: bbox, track_id, object_name, time_date, confidence, score\n\n"
+                "score is the likelihood that an event is an anomaly"
                 f"Context from coordinates {bbox}:\n{context}"
             )
         },
