@@ -8,7 +8,6 @@ from .models import Video
 from DataProccessor.proccesVideoModule import process_video
 @api_view(['POST'])
 def queryOllama(request):
-    print('query')
     data = json.loads(request.body)
     query = data.get('message')
     if query:
@@ -16,7 +15,24 @@ def queryOllama(request):
         return Response({'response': response})
     else:
         return Response({'error': 'Missing query parameter'}, status=400)
+@api_view(['POST'])
+def queryOllamainROI(request):
+    data = json.loads(request.body)
+    query = data.get('message')
+    bbox = data.get('bbox')  # Expecting a list like [x1, y1, x2, y2]
+    if not query:
+        return Response({'error': 'Missing query parameter'}, status=400)
 
+    if not bbox or len(bbox) != 4:
+        return Response({'error': 'Invalid or missing bbox. It should be a list like [x1, y1, x2, y2].'}, status=400)
+
+    try:
+        bbox = [int(coord) for coord in bbox]
+    except Exception:
+        return Response({'error': 'Bounding box coordinates must be integers.'}, status=400)
+    print(bbox)
+    response = chatWithOllamainROI(query, bbox=bbox)
+    return Response({'response': response})
 
 @api_view(['POST'])
 def processVideo(request):
