@@ -120,36 +120,6 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
 
     except Exception as e:
         return f"Error during Ollama call: {e}"
-def plot_trajectory(df, track_id):
-    # Filter for specific track_id
-    df = df[df['track_id'] == track_id].copy()
-
-    if df.empty:
-        raise ValueError(f"No data found for track_id {track_id}")
-
-    # Convert bbox strings to list if needed
-    if isinstance(df.iloc[0]['bbox'], str):
-        df['bbox'] = df['bbox'].apply(ast.literal_eval)
-
-    # Calculate center points
-    df['x_center'] = df['bbox'].apply(lambda b: (b[0] + b[2]) / 2)
-    df['y_center'] = df['bbox'].apply(lambda b: (b[1] + b[3]) / 2)
-
-    # Sort by time if applicable
-    if 'time_date' in df.columns:
-        df = df.sort_values(by='time_date')
-
-    # Plot
-    plt.figure(figsize=(8, 6))
-    plt.plot(df['x_center'], df['y_center'], marker='o', linestyle='-', color='blue')
-    plt.title(f"Trajectory of Track ID {track_id}")
-    plt.xlabel("X Position")
-    plt.ylabel("Y Position")
-    plt.gca().invert_yaxis()  # If using image coordinate system
-    plt.grid(True)
-
-    # Save plot
-    plt.show()
 
 def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5) -> str:
     """
