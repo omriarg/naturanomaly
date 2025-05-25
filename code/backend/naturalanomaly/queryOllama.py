@@ -1,5 +1,6 @@
 import pandas as pd
 import pandasql as psql
+from matplotlib import pyplot as plt
 from vanna.ollama import Ollama
 from vanna.chromadb.chromadb_vector import ChromaDB_VectorStore
 from .cleanData import *
@@ -100,7 +101,8 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
                 "- Use SQL if the user asks about counts, filters, or stats.\n"
                 "- Otherwise, use the summary provided in context.\n\n"
                 "Fields available: bbox, track_id, object_name, time_date, confidence, score\n\n"
-                "score is the likelihood that an event is an anomaly"
+                "if user EXPLICITLY asks to plot trajectory, if he specifies a track_id,"
+                "or if track_id is asked based on some form on the context data, CALL plot_trajectory with parsed track_id"
                 f"Context from coordinates {bbox}:\n{context}"
             )
         },
@@ -113,26 +115,49 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
             messages=messages,
         )
 
-        # if response.message.tool_calls:
-        #     for tool in response.message.tool_calls:
-        #         function_to_call = {
-        #             'execute_sql': execute_sql,
-        #             'respond_to_user': respond_to_user
-        #         }.get(tool.function.name)
-        #         if function_to_call:
-        #             return function_to_call(**tool.function.arguments)
 
         return response.message.content
 
     except Exception as e:
         return f"Error during Ollama call: {e}"
+def plot_trajectory(df, track_id):
+    # Filter for specific track_id
+    df = df[df['track_id'] == track_id].copy()
+
+    if df.empty:
+        raise ValueError(f"No data found for track_id {track_id}")
+
+    # Convert bbox strings to list if needed
+    if isinstance(df.iloc[0]['bbox'], str):
+        df['bbox'] = df['bbox'].apply(ast.literal_eval)
+
+    # Calculate center points
+    df['x_center'] = df['bbox'].apply(lambda b: (b[0] + b[2]) / 2)
+    df['y_center'] = df['bbox'].apply(lambda b: (b[1] + b[3]) / 2)
+
+    # Sort by time if applicable
+    if 'time_date' in df.columns:
+        df = df.sort_values(by='time_date')
+
+    # Plot
+    plt.figure(figsize=(8, 6))
+    plt.plot(df['x_center'], df['y_center'], marker='o', linestyle='-', color='blue')
+    plt.title(f"Trajectory of Track ID {track_id}")
+    plt.xlabel("X Position")
+    plt.ylabel("Y Position")
+    plt.gca().invert_yaxis()  # If using image coordinate system
+    plt.grid(True)
+
+    # Save plot
+    plt.show()
+
 def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5) -> str:
     """
     Summarize the most anomalous or all tracked events in a region of interest (ROI).
+
     Args:
         region_df (pd.DataFrame): Data filtered by bounding box.
-        top_n (int): Number of top anomalies to include (if not full_history).
-        full_history (bool): If True, include all events in the region.
+        top_n (int): Number of top anomalies to include.
 
     Returns:
         str: A descriptive summary of events or anomalies.
@@ -140,7 +165,7 @@ def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5) -> str:
     if region_df.empty:
         return "No tracked objects found in the selected region."
 
-    # Use top anomalies or full event list
+    # Use top anomalies
     df = region_df.sort_values(by="score", ascending=False).head(top_n)
 
     summaries = []
@@ -160,7 +185,17 @@ def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5) -> str:
         except Exception as e:
             summaries.append(f"{i}. (Error parsing row: {e})")
 
+    # Add object type counts from full region_df
+    object_counts = region_df['object_name'].value_counts()
+    counts_summary = "\n".join(
+        f"- **{obj}**: {count} object(s) passed through the area"
+        for obj, count in object_counts.items()
+    )
+
+    summaries.append("\n**Summary of object types in the region:**\n" + counts_summary)
+
     return "\n".join(summaries)
+
 
 def respond_to_user(query: str) -> str:
     """
