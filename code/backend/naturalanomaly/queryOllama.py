@@ -96,13 +96,9 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
         {
             'role': 'system',
             'content': (
-                "You are a helpful assistant that analyzes YOLO-based surveillance data. "
+                "You are a helpful assistant that analyzes YOLO-based surveillance data in a specific ROI of the video "
                 "You answer based on structured object detection logs.\n"
-                "- Use SQL if the user asks about counts, filters, or stats.\n"
-                "- Otherwise, use the summary provided in context.\n\n"
-                "Fields available: bbox, track_id, object_name, time_date, confidence, score\n\n"
-                "if user EXPLICITLY asks to plot trajectory, if he specifies a track_id,"
-                "or if track_id is asked based on some form on the context data, CALL plot_trajectory with parsed track_id"
+                "- use the summary provided in context.\n\n"
                 f"Context from coordinates {bbox}:\n{context}"
             )
         },
