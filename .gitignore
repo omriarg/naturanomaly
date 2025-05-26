@@ -3,3 +3,4 @@ __pycache__
 venv
 code/backend/DataProccessor/bbox_images
 .venv
+code/frontend/naturalAnomaly/.vite
