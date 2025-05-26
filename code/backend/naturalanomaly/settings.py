@@ -82,8 +82,8 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',  # Use MySQL database
         'NAME': 'naturalanomaly',  # Name of your database
-        'USER': 'root',  # Your MySQL username
-        'PASSWORD': 'Mnbvox986',  # Your MySQL passwor
+        'USER': 'anomaly_user',  # Your MySQL username
+        'PASSWORD': 'anom@l321',  # Your MySQL passwor
         'HOST': 'localhost',  # Host where MySQL is running (usually 'localhost')
         'PORT': '3306',  # Default MySQL port
     }
