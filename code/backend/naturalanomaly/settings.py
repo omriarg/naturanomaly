@@ -9,7 +9,15 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
+import os
+from pathlib import Path
+from dotenv import load_dotenv
 
+# טען משתנים מהקובץ המתאים
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR / 'build' / 'env' / '.env.dev'  # שים לב: לפיתוח, זה הקובץ שנקרא
+
+load_dotenv(dotenv_path=ENV_PATH)
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -80,14 +88,15 @@ WSGI_APPLICATION = 'naturalanomaly.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',  # Use MySQL database
-        'NAME': 'naturalanomaly',  # Name of your database
-        'USER': 'anomaly_user',  # Your MySQL username
-        'PASSWORD': 'anom@l321',  # Your MySQL passwor
-        'HOST': 'localhost',  # Host where MySQL is running (usually 'localhost')
-        'PORT': '3306',  # Default MySQL port
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': os.getenv('DB_NAME'),
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'),
+        'HOST': os.getenv('DB_HOST'),
+        'PORT': os.getenv('DB_PORT'),
     }
 }
+
 
 
 # Password validation
