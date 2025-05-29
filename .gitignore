@@ -1,6 +1,9 @@
 .idea
 __pycache__
 venv
-code/backend/DataProccessor/bbox_images
 .venv
+*.env
+.env.*
+build/env/.env.*
+code/backend/DataProccessor/bbox_images
 code/frontend/naturalAnomaly/.vite
