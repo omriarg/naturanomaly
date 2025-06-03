@@ -1,3 +1,7 @@
+import base64
+import pickle
+
+import cv2
 import pandas as pd
 import pandasql as psql
 from matplotlib import pyplot as plt
@@ -92,6 +96,8 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
         return region_df.sort_values(by="time_date")
     context = summarize_roi_events(region_df)
     print(context)
+    probability_of_movement=compute_roi_probability_from_pickle(video_id=video_id,bbox=bbox)
+    print(probability_of_movement)
     messages = [
         {
             'role': 'system',
@@ -99,7 +105,10 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
                 "You are a helpful assistant that analyzes YOLO-based surveillance data in a specific ROI of the video "
                 "You answer based on structured object detection logs.\n"
                 "- use the summary provided in context.\n\n"
+                "if the user asks why is something unusual try to cross reference the context provided"
+                "with the heatmap likelihood probability between 0-1 of movement in this area provided to answer"
                 f"Context from coordinates {bbox}:\n{context}"
+                f"roi likelihood probability:{probability_of_movement}"
             )
         },
         {'role': 'user', 'content': query}
@@ -190,6 +199,7 @@ def respond_to_user(query: str) -> str:
 
 
 def chatWithOllama(query: str,video_id=1) -> str:
+    
     """
     Query Ollama with a user prompt and determine whether to use an SQL tool or a direct response.
     Args:
@@ -207,10 +217,14 @@ def chatWithOllama(query: str,video_id=1) -> str:
         {
             'role': 'system',
             'content': (
-                "You are a helpful assistant that decides between two tools:\n\n"
+                "You are a helpful assistant that decides between three tools:\n\n"
                 "**call `execute_sql` if:**\n"
                 "- The question involves YOLO-tracked data;or (like confidence, track_id, object_name, time_date).\n"
                 "- SQL is needed to compute something (averages, filtering, counting).\n\n"
+                "- user specifies some object name, in relation with detections, ie show only trucks,cars,people"
+                "**Use `heatmap_image_tool` if:**\n"
+                "- The user asks to \"bring up heatmap,\" \"show me the overall activity map,\" \"display the full heatmap,\" "
+                "or any similar phrase indicating they want to see the entire video’s activity map.\n" \
                 "**Use `respond_to_user` if:**\n"
                 "- The question is general, like asking how YOLO works or setup help.\n\n"
                 "Dataset fields: bbox, track_id, object_name, time_date, bbox_image_path, confidence, score\n"
@@ -228,21 +242,23 @@ def chatWithOllama(query: str,video_id=1) -> str:
         response = ollama.chat(
             model='llama3.2',
             messages=messages,
-            tools=[execute_sql, respond_to_user],  # Passing function references directly
+            tools=[execute_sql, respond_to_user,heatmap_image_tool],  # Passing function references directly
         )
-
+        response_content=response.message.content
         if response.message.tool_calls:
-            for tool in response.message.tool_calls:
-                # Ensure that the original query is passed to the SQL execution tool
-                if tool.function.name == 'execute_sql':
-                    return execute_sql(query)  # Pass the original user query directly
+            for tool_call in response.message.tool_calls:
+                function_name = tool_call.function.name
 
-                function_to_call = available_functions.get(tool.function.name)
-                if function_to_call:
-                    return function_to_call(**tool.function.arguments)
-
-
-        return response.message.content  # Rturn Ollama's direct response if no tool is needed
+                if function_name == 'execute_sql':
+                    return execute_sql(query)
+                elif function_name == 'heatmap_image_tool':
+                    return extract_bbox_from_heatmap_cv(video_id=video_id,bbox=None)
+                elif function_name == 'respond_to_user':
+                    return respond_to_user(query=query)
+                else:
+                    return f"Unknown tool: {function_name}"
+        else:
+            return response.message.content  # Rturn Ollama's direct response if no tool is needed
 
     except Exception as e:
         return f"Error during Ollama API call: {e}"
@@ -272,3 +288,78 @@ def anomalies_in_region(df, x1, y1, x2, y2, threshold=0.8):
             anomalies.append(row.to_dict())
 
     return anomalies
+
+def compute_roi_probability_from_pickle(video_id=1, bbox=None):
+    if(bbox is None):
+        return
+    current_video=f'Video{video_id}'
+    pickle_filename='routine_map.pkl'
+    pickle_path=os.path.join(VIDEO_DIR,current_video,pickle_filename)
+    with open(pickle_path, 'rb') as f:
+        routine_map = pickle.load(f)  # Assuming it's a 2D list or numpy array
+
+    x1, y1, x2, y2 = bbox
+
+    sum_prob = 0.0
+    count = 0
+
+    for i in range(y1, y2):
+        for j in range(x1, x2):
+            if 0 <= i < len(routine_map) and 0 <= j < len(routine_map[0]):
+                sum_prob += routine_map[i][j]
+                count += 1
+
+    if count == 0:
+        return 0.0
+
+    return sum_prob / count
+def extract_bbox_from_heatmap_cv(video_id=1, bbox=None):
+    """
+    Extract a region from the heatmap image using OpenCV and a bounding box.
+
+    Args:
+        video_id (int): ID of the video.
+        bbox (list or None): Bounding box [x1, y1, x2, y2], or None for full image.
+
+    Returns:
+        str: Base64-encoded PNG image string.
+    """
+    img_path = os.path.join(VIDEO_DIR, f'Video{video_id}', 'heat_map_display.png')
+    img = cv2.imread(img_path)
+
+    if img is None:
+        raise FileNotFoundError(f"Image not found at path: {img_path}")
+
+    # Crop the image only if bbox is provided
+    if bbox is None:
+        region = img
+    else:
+        x1, y1, x2, y2 = bbox
+        region = img[y1:y2, x1:x2]
+
+    success, buffer = cv2.imencode('.png', region)
+    if not success:
+        raise ValueError("Failed to encode image as PNG")
+
+    base64_str = base64.b64encode(buffer).decode('utf-8')
+    return f"data:image/png;base64,{base64_str}"
+def heatmap_likelihood_tool(video_id=1, bbox=None) -> str:
+    """Return a natural language explanation of unusual activity likelihood."""
+    if bbox:
+        likelihood = compute_roi_probability_from_pickle(video_id, bbox)
+        if likelihood is None:
+            return "No heatmap likelihood data available for this region."
+        return (f"Based on the likelihood of movement in the specified region, "
+                f"the activity is {'likely normal' if likelihood > 0.8 else 'unlikely or unusual'} "
+                f"(probability score: {likelihood:.2f}).")
+    else:
+        return "Please specify a region to compute likelihood."
+
+def heatmap_image_tool(video_id=1, bbox=None) -> str:
+    """Return base64 encoded heatmap image, cropped if bbox given."""
+    print("heat tool called")
+    try:
+        img_base64 = extract_bbox_from_heatmap_cv(video_id, bbox)
+        return img_base64 # Return base64 string for rendering image in UI
+    except Exception as e:
+        return f"Error retrieving heatmap image: {e}"

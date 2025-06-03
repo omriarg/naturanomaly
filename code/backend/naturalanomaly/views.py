@@ -12,6 +12,8 @@ def queryOllama(request):
     query = data.get('message')
     if query:
         response = chatWithOllama(query)
+        if isinstance(response, str) and response.startswith('data:image/'):
+            return Response({'image': response.split(',', 1)[1]})
         return Response({'response': response})
     else:
         return Response({'error': 'Missing query parameter'}, status=400)
