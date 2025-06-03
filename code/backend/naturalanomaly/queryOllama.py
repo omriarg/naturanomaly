@@ -95,9 +95,9 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
     if(full_history):#user wants full history of region return df
         return region_df.sort_values(by="time_date")
     context = summarize_roi_events(region_df)
-    print(context)
     probability_of_movement=compute_roi_probability_from_pickle(video_id=video_id,bbox=bbox)
-    print(probability_of_movement)
+    unusuality_explanation= analyze_most_unusual_event(region_df, likelihood=probability_of_movement)
+    print(unusuality_explanation)
     messages = [
         {
             'role': 'system',
@@ -109,6 +109,8 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
                 "with the heatmap likelihood probability between 0-1 of movement in this area provided to answer"
                 f"Context from coordinates {bbox}:\n{context}"
                 f"roi likelihood probability:{probability_of_movement}"
+                "if the user asks what happens in general, use summary to give explanation"
+                f"if the user asks why is something unusual use the explanation more: {unusuality_explanation}"
             )
         },
         {'role': 'user', 'content': query}
@@ -125,6 +127,50 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
 
     except Exception as e:
         return f"Error during Ollama call: {e}"
+
+
+def analyze_most_unusual_event(region_df, likelihood):
+    if region_df.empty:
+        return "There are no events in the selected region to analyze."
+
+    # Get the most unusual event — e.g., rarest object
+    object_counts = region_df['object_name'].value_counts()
+    rarest_object = object_counts.idxmin()
+    rarest_count = object_counts.min()
+    total_objects = object_counts.sum()
+    ratio = rarest_count / total_objects if total_objects else 0
+
+    cooccur_msg = ""
+
+    if 'time_date' in region_df.columns:
+        # Check what co-occurs with the rarest object
+        timestamps = region_df[region_df['object_name'] == rarest_object]['time_date'].unique()
+        cooccur_objs = region_df[region_df['time_date'].isin(timestamps)]['object_name'].unique()
+        cooccur_objs = [obj for obj in cooccur_objs if obj != rarest_object]
+        if cooccur_objs:
+            cooccur_msg = f" It co-occurred with: {', '.join(cooccur_objs)}."
+
+    # Construct explanation
+    if likelihood < 0.3 and ratio < 0.1:
+        return (
+                f"The most unusual event is the appearance of a **{rarest_object}**, "
+                f"seen only {rarest_count} times out of {total_objects} ({ratio:.2%}). "
+                f"This region also has a low expected movement likelihood ({likelihood:.2f})." +
+                cooccur_msg
+        )
+    elif ratio < 0.1:
+        return (
+                f"The most unusual event is the **{rarest_object}**, which is rarely seen in this area "
+                f"({rarest_count} out of {total_objects} detections, {ratio:.2%})." +
+                cooccur_msg
+        )
+    elif likelihood < 0.3:
+        return (
+                f"While the **{rarest_object}** appears with some frequency, this ROI has low movement probability ({likelihood:.2f})." +
+                cooccur_msg
+        )
+    else:
+        return f"Nothing stands out as particularly unusual in this ROI."
 
 def summarize_roi_events(region_df: pd.DataFrame, top_n: int = 5) -> str:
     """
@@ -357,7 +403,6 @@ def heatmap_likelihood_tool(video_id=1, bbox=None) -> str:
 
 def heatmap_image_tool(video_id=1, bbox=None) -> str:
     """Return base64 encoded heatmap image, cropped if bbox given."""
-    print("heat tool called")
     try:
         img_base64 = extract_bbox_from_heatmap_cv(video_id, bbox)
         return img_base64 # Return base64 string for rendering image in UI
