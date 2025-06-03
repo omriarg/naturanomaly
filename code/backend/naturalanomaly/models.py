@@ -7,3 +7,4 @@ class Video(models.Model):
 
     def __str__(self):
         return f"Video {self.video_id}: {self.url}: {self.csv_path}"
+
