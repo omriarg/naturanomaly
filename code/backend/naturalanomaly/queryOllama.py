@@ -109,7 +109,7 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
                 "with the heatmap likelihood probability between 0-1 of movement in this area provided to answer"
                 f"Context from coordinates {bbox}:\n{context}"
                 f"roi likelihood probability:{probability_of_movement}"
-                "if the user asks what happens in general, use summary to give explanation"
+                "if the user asks what happens here? or something that hints at a general explanation of the events in the ROI, use summary to give explanation"
                 f"if the user asks why is something unusual use the explanation more: {unusuality_explanation}"
             )
         },
