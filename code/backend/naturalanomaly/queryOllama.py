@@ -40,7 +40,7 @@ def set_video_context(video_id=1):
     # SQL Runner
     def run_sql(sql):
         try:
-            return psql.sqldf(sql, {'df': df})
+            return preprocess_data_without_embedding(psql.sqldf(sql, {'df': df}))
         except Exception as e:
             print(f"SQL execution error: {e}")
             return pd.DataFrame()

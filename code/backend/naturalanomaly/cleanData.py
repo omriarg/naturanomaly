@@ -37,7 +37,6 @@ def preprocess_data_without_embedding(df):
     # Keep only relevant fields
     semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date','score']
     df = df[semantic_fields]
-    documents = df.apply(lambda row: ' | '.join(f"{col}: {row[col]}" for col in semantic_fields), axis=1).tolist()
     return df
 
 
