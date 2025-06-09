@@ -64,7 +64,7 @@ const ChatWindow = ({ roi, videoSize }) => {
       ]);
     };
 
-    const endpoint = isRoiChecked ? 'api/query-ollama-inROI' : '/api/query-ollama/';
+    const endpoint = isRoiChecked ? 'api/query-ollama-inROI' : 'api/query-ollama/';
     const payload = isRoiChecked
       ? {
           message: inputMessage,

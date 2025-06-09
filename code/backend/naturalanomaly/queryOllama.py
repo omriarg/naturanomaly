@@ -269,7 +269,7 @@ def chatWithOllama(query: str,video_id=1) -> str:
                 "- SQL is needed to compute something (averages, filtering, counting).\n\n"
                 "- user specifies some object name, in relation with detections, ie show only trucks,cars,people"
                 "**Use `heatmap_image_tool` if:**\n"
-                "- The user asks to \"bring up heatmap,\" \"show me the overall activity map,\" \"display the full heatmap,\" "
+                "- The user asks to \"bring up heatmap,\" \"show me the overall activity map,\" \"display the full heatmap,\",show heatmap "
                 "or any similar phrase indicating they want to see the entire video’s activity map.\n" \
                 "**Use `respond_to_user` if:**\n"
                 "- The question is general, like asking how YOLO works or setup help.\n\n"
@@ -279,10 +279,6 @@ def chatWithOllama(query: str,video_id=1) -> str:
         },
         {'role': 'user', 'content': query}
     ]
-    available_functions: Dict[str, Callable] = {
-        'execute_sql': execute_sql,
-        'respond_to_user': respond_to_user,
-    }
 
     try:
         response = ollama.chat(
