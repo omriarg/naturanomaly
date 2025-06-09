@@ -19,7 +19,7 @@ const getCookie = (name) => {
 const ChatWindow = ({ roi, videoSize }) => {
   const [messages, setMessages] = useState([]);
   const [inputMessage, setInputMessage] = useState('');
-  const [openImage, setOpenImage] = useState(null); // 🔥 תמונה לפתיחה ב-modal
+  const [openImage, setOpenImage] = useState(null);
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
@@ -95,8 +95,22 @@ const ChatWindow = ({ roi, videoSize }) => {
 
   return (
     <>
-      <Paper sx={{ padding: '20px', height: '300px', display: 'flex', flexDirection: 'column' }}>
-        <Box sx={{ flex: 1, overflowY: 'auto' }}>
+      <Paper
+        sx={{
+          width: '350px',
+          height: '100vh',
+          position: 'fixed',
+          right: 0,
+          top: 0,
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          borderRadius: 0,
+          boxShadow: 4,
+        }}
+      >
+        {/* הודעות */}
+        <Box sx={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
           {messages.map((msg, index) => (
             <Box key={index} sx={{ marginBottom: '10px' }}>
               {msg.sender === 'user' ? (
@@ -128,23 +142,25 @@ const ChatWindow = ({ roi, videoSize }) => {
           <div ref={messagesEndRef} />
         </Box>
 
-        <TextField
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          fullWidth
-          variant="outlined"
-          placeholder="💬 כתוב כאן..."
-          sx={{ marginTop: '10px' }}
-          onKeyPress={(e) => {
-            if (e.key === 'Enter') sendMessage();
-          }}
-        />
-        <Button onClick={sendMessage} variant="contained" sx={{ marginTop: '10px' }}>
-          שלח
-        </Button>
+        {/* שורת קלט וכפתור */}
+        <Box sx={{ padding: '10px' }}>
+          <TextField
+            value={inputMessage}
+            onChange={(e) => setInputMessage(e.target.value)}
+            fullWidth
+            variant="outlined"
+            placeholder="💬 כתוב כאן..."
+            onKeyPress={(e) => {
+              if (e.key === 'Enter') sendMessage();
+            }}
+          />
+          <Button onClick={sendMessage} variant="contained" sx={{ marginTop: '10px' }} fullWidth>
+            שלח
+          </Button>
+        </Box>
       </Paper>
 
-      {/* 🔍 Modal להצגת תמונה בגודל מלא */}
+      {/* הצגת תמונה מוגדלת */}
       <Modal open={!!openImage} onClose={() => setOpenImage(null)}>
         <Box
           onClick={() => setOpenImage(null)}
