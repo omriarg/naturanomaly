@@ -14,8 +14,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 
 # טען משתנים מהקובץ המתאים
-BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent
-ENV_PATH = BASE_DIR / 'build' / 'env' / '.env.dev'  # שים לב: לפיתוח, זה הקובץ שנקרא
+BASE_DIR = Path(__file__).resolve().parent.parent
+ENV_PATH = BASE_DIR / '.env'  # שים לב: לפיתוח, זה הקובץ שנקרא
 load_dotenv(dotenv_path=ENV_PATH)
 from pathlib import Path
 
@@ -33,10 +33,7 @@ SECRET_KEY = 'django-insecure-m=l*hr!y4h_6h$o2=g7t-^3u==&t)p^mkzjs$mb#-8=4v!!@1s
 DEBUG = True
 ALLOWED_HOSTS = ['*']
 
-CSRF_TRUSTED_ORIGINS = [
-    'http://localhost:5173',
 
-]
 
 # Application definition
 
