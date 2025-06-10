@@ -5,3 +5,4 @@ venv
 code/backend/.env
 code/backend/DataProccessor/bbox_images
 code/frontend/naturalAnomaly/.vite
+/node_modules
