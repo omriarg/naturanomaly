@@ -98,10 +98,10 @@ const ChatWindow = ({ roi, videoSize }) => {
       <Paper
         sx={{
           width: '350px',
-          height: '100vh',
+          height: 'calc(100vh - 80px)', // מתחשב בגובה הכותרת
           position: 'fixed',
           right: 0,
-          top: 0,
+          top: '80px', // מתחיל מתחת לכותרת
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
@@ -111,34 +111,116 @@ const ChatWindow = ({ roi, videoSize }) => {
       >
         {/* הודעות */}
         <Box sx={{ flex: 1, overflowY: 'auto', padding: '20px' }}>
-          {messages.map((msg, index) => (
-            <Box key={index} sx={{ marginBottom: '10px' }}>
-              {msg.sender === 'user' ? (
-                <Typography variant="body2">👤 אתה: {msg.content}</Typography>
-              ) : msg.image ? (
-                <>
-                  <Typography variant="body2">🤖 הבוט שלח תמונה (לחץ להגדלה):</Typography>
-                  <img
-                    src={msg.image}
-                    alt="Heatmap"
-                    onClick={() => setOpenImage(msg.image)}
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '200px',
-                      borderRadius: '8px',
-                      marginTop: '5px',
-                      cursor: 'pointer',
-                      transition: 'transform 0.2s',
-                    }}
-                    onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
-                    onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1.0)')}
-                  />
-                </>
-              ) : (
-                <Typography variant="body2">🤖 הבוט: {msg.content}</Typography>
-              )}
+          {messages.length === 0 ? (
+            // מסך הסבר ידידותי
+            <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <Typography variant="h6" sx={{ textAlign: 'center', color: '#1976d2', fontWeight: 'bold', mb: 3 }}>
+                🤖 ברוכים הבאים לצ'אט החכם!
+              </Typography>
+
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5, textAlign: 'center' }}>
+                <Box sx={{
+                  backgroundColor: '#f8f9ff',
+                  padding: '15px',
+                  borderRadius: '12px',
+                  border: '1px solid #e3f2fd'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1565c0', mb: 1 }}>
+                    🎥 ניתוח הווידאו
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
+                    אני יכול לנתח את הווידאו ולזהות אנומליות בזמן אמת
+                  </Typography>
+                </Box>
+
+                <Box sx={{
+                  backgroundColor: '#fff8e1',
+                  padding: '15px',
+                  borderRadius: '12px',
+                  border: '1px solid #ffecb3'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#f57c00', mb: 1 }}>
+                    🖼️ תמונות חום
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
+                    אני יכול לשלוח תמונות חום שמראות איפה התגלו אנומליות
+                  </Typography>
+                </Box>
+
+                <Box sx={{
+                  backgroundColor: '#f3e5f5',
+                  padding: '15px',
+                  borderRadius: '12px',
+                  border: '1px solid #e1bee7'
+                }}>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#7b1fa2', mb: 1 }}>
+                    🎯 איזור מעניין
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
+                    אפשר לסמן איזור בווידאו ואני אתמקד בו בניתוח
+                  </Typography>
+                </Box>
+              </Box>
+
+              <Box sx={{
+                mt: 3,
+                p: 2,
+                backgroundColor: '#e8f5e8',
+                borderRadius: '12px',
+                border: '1px solid #c8e6c9'
+              }}>
+                <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32', mb: 1, textAlign: 'center' }}>
+                  💡 דוגמאות לשאלות:
+                </Typography>
+                <Box sx={{ fontSize: '12px', color: '#388e3c', lineHeight: 1.6 }}>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "מה אתה רואה בווידאו?"</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "תראה לי תמונת חום"</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "יש אנומליות כרגע?"</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "נתח את האיזור שסימנתי"</Typography>
+                </Box>
+              </Box>
+
+              <Typography variant="body2" sx={{
+                textAlign: 'center',
+                mt: 3,
+                color: '#666',
+                fontSize: '13px',
+                fontStyle: 'italic'
+              }}>
+                התחל לכתוב כדי לשוחח איתי! 👇
+              </Typography>
             </Box>
-          ))}
+          ) : (
+            // הודעות רגילות
+            messages.map((msg, index) => (
+              <Box key={index} sx={{ marginBottom: '10px' }}>
+                {msg.sender === 'user' ? (
+                  <Typography variant="body2">👤 אתה: {msg.content}</Typography>
+                ) : msg.image ? (
+                  <>
+                    <Typography variant="body2">🤖 הבוט שלח תמונה (לחץ להגדלה):</Typography>
+                    <img
+                      src={msg.image}
+                      alt="Heatmap"
+                      onClick={() => setOpenImage(msg.image)}
+                      style={{
+                        maxWidth: '100%',
+                        maxHeight: '200px',
+                        borderRadius: '8px',
+                        marginTop: '5px',
+                        cursor: 'pointer',
+                        transition: 'transform 0.2s',
+                      }}
+                      onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.02)')}
+                      onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1.0)')}
+                    />
+                  </>
+                ) : (
+                  <Typography variant="body2">🤖 הבוט: {msg.content}</Typography>
+                )}
+              </Box>
+            ))
+          )}
           <div ref={messagesEndRef} />
         </Box>
 
