@@ -126,10 +126,10 @@ const ChatWindow = ({ roi, videoSize }) => {
                   border: '1px solid #e3f2fd'
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#1565c0', mb: 1 }}>
-                    🎥 ניתוח הווידאו
+                    🎥 Video Analysis
                   </Typography>
                   <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
-                    אני יכול לנתח את הווידאו ולזהות אנומליות בזמן אמת
+                      I Can analyze the video and detect anomalies in realtime
                   </Typography>
                 </Box>
 
@@ -140,10 +140,10 @@ const ChatWindow = ({ roi, videoSize }) => {
                   border: '1px solid #ffecb3'
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#f57c00', mb: 1 }}>
-                    🖼️ תמונות חום
+                    Heatmap
                   </Typography>
                   <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
-                    אני יכול לשלוח תמונות חום שמראות איפה התגלו אנומליות
+                    I can send an heatmap which shows movement across time
                   </Typography>
                 </Box>
 
@@ -154,10 +154,10 @@ const ChatWindow = ({ roi, videoSize }) => {
                   border: '1px solid #e1bee7'
                 }}>
                   <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#7b1fa2', mb: 1 }}>
-                    🎯 איזור מעניין
+                    🎯Region of interest (ROI).
                   </Typography>
                   <Typography variant="body2" sx={{ fontSize: '13px', lineHeight: 1.4 }}>
-                    אפשר לסמן איזור בווידאו ואני אתמקד בו בניתוח
+                    You cant mark an area of the video and i will focus it in my analysis.
                   </Typography>
                 </Box>
               </Box>
@@ -170,13 +170,14 @@ const ChatWindow = ({ roi, videoSize }) => {
                 border: '1px solid #c8e6c9'
               }}>
                 <Typography variant="body2" sx={{ fontWeight: 'bold', color: '#2e7d32', mb: 1, textAlign: 'center' }}>
-                  💡 דוגמאות לשאלות:
+                  💡Example prompts:
                 </Typography>
                 <Box sx={{ fontSize: '12px', color: '#388e3c', lineHeight: 1.6 }}>
-                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "מה אתה רואה בווידאו?"</Typography>
-                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "תראה לי תמונת חום"</Typography>
-                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "יש אנומליות כרגע?"</Typography>
-                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "נתח את האיזור שסימנתי"</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "what do you see in the video?"</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "Show me the heatmap."</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "Show me only objects detected as "truck", sort by confidence"</Typography>
+                  <Typography variant="body2" sx={{ fontSize: '12px' }}>• "Analyze the area that i marked, what is unusual here?"</Typography>
+                    <Typography variant="body2" sx={{ fontSize: '12px' }}>• "What is the likelihood of movement in the area i marked?"</Typography>
                 </Box>
               </Box>
 

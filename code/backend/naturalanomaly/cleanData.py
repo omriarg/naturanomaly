@@ -15,7 +15,6 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
 
     existing_collections = [c.name for c in client.list_collections()]
     if collection_name in existing_collections:
-        print(f"✅ Vector store for '{collection_name}' already exists. Skipping preprocessing.")
         return
 
     df = pd.read_csv(csv_path)
@@ -24,7 +23,6 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
     semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date']
     df = df[semantic_fields]
     documents = df.apply(lambda row: ' | '.join(f"{col}: {row[col]}" for col in semantic_fields), axis=1).tolist()
-    print(f"🔄 Preprocessing and embedding {len(documents)} rows...")
 
     collection = client.create_collection(name=collection_name)
 
