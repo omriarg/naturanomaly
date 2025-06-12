@@ -97,11 +97,11 @@ const ChatWindow = ({ roi, videoSize }) => {
     <>
       <Paper
         sx={{
-          width: '350px',
+          width: '680px',
           height: 'calc(100vh - 80px)', // מתחשב בגובה הכותרת
           position: 'fixed',
           right: 0,
-          top: '80px', // מתחיל מתחת לכותרת
+          top: '86px', // מתחיל מתחת לכותרת
           zIndex: 1000,
           display: 'flex',
           flexDirection: 'column',
