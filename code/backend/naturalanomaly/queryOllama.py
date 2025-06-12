@@ -27,7 +27,6 @@ def set_video_context(video_id=1):
     if current_video_id == video_id:
         return  # already loaded
 
-    print(f"Loading data for video_id={video_id}")
     current_video_id = video_id
 
     vn = MyVanna(config={
@@ -42,7 +41,6 @@ def set_video_context(video_id=1):
         try:
             return preprocess_data_without_embedding(psql.sqldf(sql, {'df': df}))
         except Exception as e:
-            print(f"SQL execution error: {e}")
             return pd.DataFrame()
 
     vn.run_sql = run_sql
@@ -97,7 +95,6 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
     context = summarize_roi_events(region_df)
     probability_of_movement=compute_roi_probability_from_pickle(video_id=video_id,bbox=bbox)
     unusuality_explanation= analyze_most_unusual_event(region_df, likelihood=probability_of_movement)
-    print(unusuality_explanation)
     messages = [
         {
             'role': 'system',
@@ -106,9 +103,9 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
                 "You answer based on structured object detection logs.\n"
                 "- use the summary provided in context.\n\n"
                 "if the user asks why is something unusual try to cross reference the context provided"
-                "with the heatmap likelihood probability between 0-1 of movement in this area provided to answer"
+                "with the heatmap expected movement likelihood   in this area provided to answer"
                 f"Context from coordinates {bbox}:\n{context}"
-                f"roi likelihood probability:{probability_of_movement}"
+                f"roi expected movement likelihood:{probability_of_movement}"
                 "if the user asks what happens here? or something that hints at a general explanation of the events in the ROI, use summary to give explanation"
                 f"if the user asks why is something unusual use the explanation more: {unusuality_explanation}"
             )
@@ -235,6 +232,8 @@ def respond_to_user(query: str) -> str:
                 'role': 'system',
                 'content': (
                     "You are a helpful assistant in a chat UI, helping user Query a backend YOLO object detection model.\n"
+                    "in the video embedded in the UI, we see biderectional traffic on a road, with vehicles passing through"
+
                 ),
             },
                 {'role': 'user', 'content': query}],

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Box, Grid, Typography, Paper } from '@mui/material';
+import { Box, Typography, Paper } from '@mui/material';
 import VideoPlayer from './VideoPlayer';
 import ChatWindow from './ChatWindow';
 
@@ -14,27 +14,21 @@ const MainScreen = () => {
         NATURALANOMALY – ניתוח חכם של אנומליות בזמן אמת
       </Typography>
 
-      <Grid container spacing={2} sx={{ height: 'calc(100% - 80px)', padding: 2 }}>
-        {/* צד שמאל: וידאו */}
-        <Grid item xs={12} md={7} sx={{ height: '100%' }}>
-          <Paper elevation={3} sx={{ height: '100%', borderRadius: 3, padding: 2 }}>
-            <VideoPlayer
-              roi={roi}
-              setRoi={setRoi}
-              drawEnabled={drawEnabled}
-              setDrawEnabled={setDrawEnabled}
-              setVideoSize={setVideoSize}
-            />
-          </Paper>
-        </Grid>
+      {/* רק הוידאו - ללא grid שמיותר */}
+      <Box sx={{ height: 'calc(100% - 80px)', padding: 2, paddingRight: '370px' }}>
+        <Paper elevation={3} sx={{ height: '100%', borderRadius: 3, padding: 2 }}>
+          <VideoPlayer
+            roi={roi}
+            setRoi={setRoi}
+            drawEnabled={drawEnabled}
+            setDrawEnabled={setDrawEnabled}
+            setVideoSize={setVideoSize}
+          />
+        </Paper>
+      </Box>
 
-        {/* צד ימין: צ'אט */}
-        <Grid item xs={12} md={5} sx={{ height: '100%' }}>
-          <Paper elevation={3} sx={{ height: '100%', borderRadius: 3, padding: 2 }}>
-            <ChatWindow roi={roi} drawEnabled={drawEnabled} videoSize={videoSize} />
-          </Paper>
-        </Grid>
-      </Grid>
+      {/* הצ'אט נשאר fixed אבל מתחת לכותרת */}
+      <ChatWindow roi={roi} drawEnabled={drawEnabled} videoSize={videoSize} />
     </Box>
   );
 };
