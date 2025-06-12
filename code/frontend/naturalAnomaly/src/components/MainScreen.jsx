@@ -9,7 +9,7 @@ const MainScreen = () => {
   const [videoSize, setVideoSize] = useState({ width: 0, height: 0 });
 
   return (
-    <Box sx={{ height: '100vh', width: '100vw', overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
+    <Box sx={{ height: '100vh', width: '80vw', overflow: 'hidden', backgroundColor: '#f5f5f5' }}>
       <Typography variant="h4" gutterBottom sx={{ textAlign: 'center', fontWeight: 'bold', pt: 2 }}>
         NATURALANOMALY – ניתוח חכם של אנומליות בזמן אמת
       </Typography>
