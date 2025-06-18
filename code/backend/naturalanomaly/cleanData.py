@@ -31,11 +31,16 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
         collection.add(ids=[str(i)], documents=[doc], embeddings=[embedding])
 
 def preprocess_data_without_embedding(df):
-    # data Cleaning, reduce signal to noise
-    # Keep only relevant fields
-    semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date','score']
-    df = df[semantic_fields]
+    required_cols = ['bbox', 'track_id', 'object_name', 'time_date', 'bbox_image_path', 'confidence', 'score']
+    # Check if all required columns are in df
+    if all(col in df.columns for col in required_cols):
+        # data Cleaning, reduce signal to noise
+        # Keep only relevant fields (adjust if you want to keep all or fewer)
+        semantic_fields = ['track_id', 'object_name', 'confidence', 'time_date', 'score']
+        df = df[semantic_fields]
+    # else return df unchanged
     return df
+
 
 
 def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
