@@ -33,6 +33,7 @@ def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store
 def preprocess_data_without_embedding(df):
     required_cols = ['bbox', 'track_id', 'object_name', 'time_date', 'bbox_image_path', 'confidence', 'score']
     # Check if all required columns are in df
+    #else df might be custom response then keep intact.
     if all(col in df.columns for col in required_cols):
         # data Cleaning, reduce signal to noise
         # Keep only relevant fields (adjust if you want to keep all or fewer)
@@ -44,6 +45,7 @@ def preprocess_data_without_embedding(df):
 
 
 def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
+    ##embedded data is available only for default video
     persist_path=os.path.join(BASE_DIR, persist_path)
     client = chromadb.PersistentClient(path=persist_path, settings=Settings(allow_reset=True))
     collection = client.get_collection(name=collection_name)

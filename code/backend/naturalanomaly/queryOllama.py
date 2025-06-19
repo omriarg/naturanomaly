@@ -69,7 +69,7 @@ def set_video_context(video_id=1):
 def execute_sql(query):
     try:
         result = vn.generate_sql(query,allow_llm_to_see_data=True)
-        return vn.run_sql(result).to_string()
+        return vn.run_sql(result)
     except Exception as e:
         return f"Error in vn.ask: {e}"
 def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
@@ -244,7 +244,6 @@ def respond_to_user(query: str) -> str:
 
 
 def chatWithOllama(query: str,video_id=1) -> str:
-    
     """
     Query Ollama with a user prompt and determine whether to use an SQL tool or a direct response.
     Args:
@@ -285,11 +284,11 @@ def chatWithOllama(query: str,video_id=1) -> str:
             messages=messages,
             tools=[execute_sql, respond_to_user,heatmap_image_tool],  # Passing function references directly
         )
-        response_content=response.message.content
+        response_content=response.message.content.lstrip()
         if response.message.tool_calls:
             for tool_call in response.message.tool_calls:
                 function_name = tool_call.function.name
-
+                ##account for failure ollama failure in tool call
                 if function_name == 'execute_sql':
                     return execute_sql(query)
                 elif function_name == 'heatmap_image_tool':
@@ -298,6 +297,13 @@ def chatWithOllama(query: str,video_id=1) -> str:
                     return respond_to_user(query=query)
                 else:
                     return f"Unknown tool: {function_name}"
+        ##ollama sometimes try to answer with tool call parameters as a response,account for it
+        elif response_content.startswith('{"name":"execute_sql'):
+            return execute_sql(query)
+        elif response_content.startswith('{"name":"heatmap_image_tool'):
+            return respond_to_user(query=query)
+        elif response_content.startswith('{"name":"respond_to_user'):
+            return extract_bbox_from_heatmap_cv(video_id=video_id,bbox=None)
         else:
             return response.message.content  # Rturn Ollama's direct response if no tool is needed
 
@@ -337,7 +343,7 @@ def compute_roi_probability_from_pickle(video_id=1, bbox=None):
     pickle_filename='routine_map.pkl'
     pickle_path=os.path.join(VIDEO_DIR,current_video,pickle_filename)
     with open(pickle_path, 'rb') as f:
-        routine_map = pickle.load(f)  # Assuming it's a 2D list or numpy array
+        routine_map = pickle.load(f)  #load heatmap
 
     x1, y1, x2, y2 = bbox
 
