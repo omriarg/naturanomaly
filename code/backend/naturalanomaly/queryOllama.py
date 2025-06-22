@@ -41,12 +41,8 @@ def set_video_context(video_id=1):
         try:
             return preprocess_data_without_embedding(psql.sqldf(sql, {'df': df}))
         except Exception as e:
-            return pd.DataFrame()
-
-    vn.run_sql = run_sql
-    vn.run_sql_is_set = True
-
-    # Training
+                return pd.DataFrame()
+    existing_training = vn.get_training_data()  # returns a pandas DataFrame
     training_data = [
         ("Which track_id had the lowest confidence score?",
          "SELECT track_id, MIN(confidence) AS lowest_confidence FROM df GROUP BY track_id ORDER BY lowest_confidence ASC LIMIT 1;"),
@@ -63,8 +59,39 @@ def set_video_context(video_id=1):
         ("What is the busiest time?",
          "SELECT time_date, COUNT(*) AS detection_count FROM df GROUP BY time_date ORDER BY detection_count DESC LIMIT 1;")
     ]
-    for question, sql in training_data:
-        vn.train(question=question, sql=sql)
+    #ensure model will be trained only of neccessary
+    # vanna is only needed to be trained once
+    has_ddl = any(existing_training['training_data_type'] == 'ddl')
+    has_doc = any(existing_training['training_data_type'] == 'documentation')
+    existing_questions = list(existing_training['question'])
+    training_questions = [t[0] for t in training_data]
+
+    has_training = all(q in existing_questions for q in training_questions)
+
+    if not has_ddl:
+        vn.train(ddl="""
+        CREATE TABLE df (
+          bbox TEXT,
+          track_id INTEGER,
+          object_name TEXT,
+          time_date TEXT,
+          bbox_image_path TEXT,
+          confidence REAL,
+          score REAL
+        );
+        """)
+
+    if not has_doc:
+        vn.train(documentation="""
+        The table 'df' contains YOLO-detected objects with bounding boxes, types, timestamps,
+        detection confidence, anomaly scores, and cropped image paths.
+        """)
+    if not has_training:
+        for question, sql in training_data:
+            vn.train(question=question, sql=sql)
+    vn.run_sql = run_sql
+    vn.run_sql_is_set = True
+
 
 def execute_sql(query):
     try:
