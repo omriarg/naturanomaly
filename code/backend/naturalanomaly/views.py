@@ -17,11 +17,19 @@ def queryOllama(request):
             return Response({'image': response.split(',', 1)[1]})
         elif isinstance(response,pd.DataFrame):
             if not response.empty:
+                columns = list(response.columns)
+                rows = response.to_dict(orient="records")
+                cols_text = ", ".join(columns)
+                summary = (f"Showing {len(rows)} rows and {len(columns)} columns: {cols_text}."
+                           f"This table is a response to your query: '{query}'.")
                 structured_data = {
-                    "columns": list(response.columns),
-                    "rows": response.to_dict(orient="records")
+                    "columns": columns,
+                    "rows": rows,
+                    "summary": summary
                 }
-                return Response({"Table": structured_data})
+                return Response({
+                    "Table": structured_data,
+                })
             else:
                 return Response({'response': 'No results were generated from your query'})
         return Response({'response': response})
