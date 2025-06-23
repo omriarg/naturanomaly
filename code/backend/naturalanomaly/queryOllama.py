@@ -35,7 +35,6 @@ def set_video_context(video_id=1):
     })
 
     df = pd.read_csv(os.path.join(VIDEO_DIR, f'Video{video_id}', 'tracked_objects.csv'))
-
     # SQL Runner
     def run_sql(sql):
         try:
@@ -59,33 +58,13 @@ def set_video_context(video_id=1):
         ("What is the busiest time?",
          "SELECT time_date, COUNT(*) AS detection_count FROM df GROUP BY time_date ORDER BY detection_count DESC LIMIT 1;")
     ]
-    #ensure model will be trained only of neccessary
-    # vanna is only needed to be trained once
-    has_ddl = any(existing_training['training_data_type'] == 'ddl')
-    has_doc = any(existing_training['training_data_type'] == 'documentation')
+    #ensure model will be trained only if neccessary
     existing_questions = list(existing_training['question'])
     training_questions = [t[0] for t in training_data]
-
     has_training = all(q in existing_questions for q in training_questions)
-
+    has_ddl = any(existing_training['training_data_type'] == 'ddl')
     if not has_ddl:
-        vn.train(ddl="""
-        CREATE TABLE df (
-          bbox TEXT,
-          track_id INTEGER,
-          object_name TEXT,
-          time_date TEXT,
-          bbox_image_path TEXT,
-          confidence REAL,
-          score REAL
-        );
-        """)
-
-    if not has_doc:
-        vn.train(documentation="""
-        The table 'df' contains YOLO-detected objects with bounding boxes, types, timestamps,
-        detection confidence, anomaly scores, and cropped image paths.
-        """)
+        vn.train(ddl='CREATE TABLE df (bbox TEXT, track_id INTEGER, object_name TEXT, time_date TEXT, bbox_image_path TEXT, confidence REAL, score REAL)')
     if not has_training:
         for question, sql in training_data:
             vn.train(question=question, sql=sql)
@@ -96,7 +75,17 @@ def set_video_context(video_id=1):
 def execute_sql(query):
     try:
         result = vn.generate_sql(query,allow_llm_to_see_data=True)
-        return vn.run_sql(result)
+        result_df = vn.run_sql(result)
+        if(len(result_df.index) <= 10):
+            #if result is small enough to be summarize, return a summary in natural language
+            return respond_to_user(     f"The user asked: **{query}**\n\n"
+                                     f"The system generated a SQL prompt to retrieve related data which resulted in a Table with {len(result)} row(s):\n\n"
+                                     f"{result_df.to_string()}\n\n"
+                                     "This data is from YOLO-based object detection in a surveillance video. "
+                                     "the query was run on a table where Each row describes a detected object (e.g., type, track ID, time(assigned per frame), confidence, anomaly score).\n\n"
+                                     "Please explain in natural language what this result means. "
+                                     "Provide a clear and concise summary that helps the user understand the data in plain terms.")
+        return result_df
     except Exception as e:
         return f"Error in vn.ask: {e}"
 def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
