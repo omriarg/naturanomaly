@@ -35,18 +35,13 @@ def set_video_context(video_id=1):
     })
 
     df = pd.read_csv(os.path.join(VIDEO_DIR, f'Video{video_id}', 'tracked_objects.csv'))
-
     # SQL Runner
     def run_sql(sql):
         try:
             return preprocess_data_without_embedding(psql.sqldf(sql, {'df': df}))
         except Exception as e:
-            return pd.DataFrame()
-
-    vn.run_sql = run_sql
-    vn.run_sql_is_set = True
-
-    # Training
+                return pd.DataFrame()
+    existing_training = vn.get_training_data()  # returns a pandas DataFrame
     training_data = [
         ("Which track_id had the lowest confidence score?",
          "SELECT track_id, MIN(confidence) AS lowest_confidence FROM df GROUP BY track_id ORDER BY lowest_confidence ASC LIMIT 1;"),
@@ -63,13 +58,34 @@ def set_video_context(video_id=1):
         ("What is the busiest time?",
          "SELECT time_date, COUNT(*) AS detection_count FROM df GROUP BY time_date ORDER BY detection_count DESC LIMIT 1;")
     ]
-    for question, sql in training_data:
-        vn.train(question=question, sql=sql)
+    #ensure model will be trained only if neccessary
+    existing_questions = list(existing_training['question'])
+    training_questions = [t[0] for t in training_data]
+    has_training = all(q in existing_questions for q in training_questions)
+    has_ddl = any(existing_training['training_data_type'] == 'ddl')
+    if not has_ddl:
+        vn.train(ddl='CREATE TABLE df (bbox TEXT, track_id INTEGER, object_name TEXT, time_date TEXT, bbox_image_path TEXT, confidence REAL, score REAL)')
+    if not has_training:
+        for question, sql in training_data:
+            vn.train(question=question, sql=sql)
+    vn.run_sql = run_sql
+    vn.run_sql_is_set = True
+
 
 def execute_sql(query):
     try:
         result = vn.generate_sql(query,allow_llm_to_see_data=True)
-        return vn.run_sql(result).to_string()
+        result_df = vn.run_sql(result)
+        if(len(result_df.index) <= 10):
+            #if result is small enough to be summarize, return a summary in natural language
+            return respond_to_user(     f"The user asked: **{query}**\n\n"
+                                     f"The system generated a SQL prompt to retrieve related data which resulted in a Table with {len(result)} row(s):\n\n"
+                                     f"{result_df.to_string()}\n\n"
+                                     "This data is from YOLO-based object detection in a surveillance video. "
+                                     "the query was run on a table where Each row describes a detected object (e.g., type, track ID, time(assigned per frame), confidence, anomaly score).\n\n"
+                                     "Please explain in natural language what this result means. "
+                                     "Provide a clear and concise summary that helps the user understand the data in plain terms.")
+        return result_df
     except Exception as e:
         return f"Error in vn.ask: {e}"
 def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
@@ -244,7 +260,6 @@ def respond_to_user(query: str) -> str:
 
 
 def chatWithOllama(query: str,video_id=1) -> str:
-    
     """
     Query Ollama with a user prompt and determine whether to use an SQL tool or a direct response.
     Args:
@@ -285,11 +300,11 @@ def chatWithOllama(query: str,video_id=1) -> str:
             messages=messages,
             tools=[execute_sql, respond_to_user,heatmap_image_tool],  # Passing function references directly
         )
-        response_content=response.message.content
+        response_content=response.message.content.lstrip()
         if response.message.tool_calls:
             for tool_call in response.message.tool_calls:
                 function_name = tool_call.function.name
-
+                ##account for failure ollama failure in tool call
                 if function_name == 'execute_sql':
                     return execute_sql(query)
                 elif function_name == 'heatmap_image_tool':
@@ -298,6 +313,13 @@ def chatWithOllama(query: str,video_id=1) -> str:
                     return respond_to_user(query=query)
                 else:
                     return f"Unknown tool: {function_name}"
+        ##ollama sometimes try to answer with tool call parameters as a response,account for it
+        elif response_content.startswith('{"name":"execute_sql'):
+            return execute_sql(query)
+        elif response_content.startswith('{"name":"heatmap_image_tool'):
+            return respond_to_user(query=query)
+        elif response_content.startswith('{"name":"respond_to_user'):
+            return extract_bbox_from_heatmap_cv(video_id=video_id,bbox=None)
         else:
             return response.message.content  # Rturn Ollama's direct response if no tool is needed
 
@@ -337,7 +359,7 @@ def compute_roi_probability_from_pickle(video_id=1, bbox=None):
     pickle_filename='routine_map.pkl'
     pickle_path=os.path.join(VIDEO_DIR,current_video,pickle_filename)
     with open(pickle_path, 'rb') as f:
-        routine_map = pickle.load(f)  # Assuming it's a 2D list or numpy array
+        routine_map = pickle.load(f)  #load heatmap
 
     x1, y1, x2, y2 = bbox
 

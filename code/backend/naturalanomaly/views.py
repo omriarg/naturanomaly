@@ -1,3 +1,4 @@
+import pandas as pd
 from .queryOllama import *
 from django.views.decorators.csrf import csrf_exempt
 
@@ -14,6 +15,23 @@ def queryOllama(request):
         response = chatWithOllama(query)
         if isinstance(response, str) and response.startswith('data:image/'):
             return Response({'image': response.split(',', 1)[1]})
+        elif isinstance(response,pd.DataFrame):
+            if not response.empty:
+                columns = list(response.columns)
+                rows = response.to_dict(orient="records")
+                cols_text = ", ".join(columns)
+                summary = (f"Showing {len(rows)} rows and {len(columns)} columns: {cols_text}."
+                           f"This table is a response to your query: '{query}'.")
+                structured_data = {
+                    "columns": columns,
+                    "rows": rows,
+                    "summary": summary
+                }
+                return Response({
+                    "Table": structured_data,
+                })
+            else:
+                return Response({'response': 'No results were generated from your query'})
         return Response({'response': response})
     else:
         return Response({'error': 'Missing query parameter'}, status=400)
@@ -32,7 +50,6 @@ def queryOllamainROI(request):
         bbox = [int(coord) for coord in bbox]
     except Exception:
         return Response({'error': 'Bounding box coordinates must be integers.'}, status=400)
-    print(bbox)
     response = chatWithOllamainROI(query, bbox=bbox)
     return Response({'response': response})
 
