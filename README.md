@@ -1,5 +1,5 @@
 
-# 🧠 NaturaAnomaly Detection System
+# 🧠 Naturanomaly Detection System
 
 This project combines real-time YOLO object detection with LLM-based reasoning (via Ollama) to enable natural language querying of surveillance data. Users can ask complex questions like:
 
