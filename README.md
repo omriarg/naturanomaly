@@ -42,7 +42,7 @@ This will start the API at: `http://127.0.0.1:8000/`
 
 ---
 
-## 🌐 Frontend Setup (React / Next.js)
+## 🌐 Frontend Setup (React JS + Vite)
 
 1. Open a new terminal tab and go to the frontend directory:
 
