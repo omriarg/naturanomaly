@@ -43,5 +43,6 @@ SYS_PROMPTS = {
      "SELECT AVG(confidence) AS overall_avg_confidence FROM df;"),
     ("What is the busiest time?",
      "SELECT time_date, COUNT(*) AS detection_count FROM df GROUP BY time_date ORDER BY detection_count DESC LIMIT 1;")
+    ,("How many trucks are in the video?","SELECT COUNT(*) FROM df WHERE object_name = 'truck' OR object_name LIKE '%truck%'")
 ]
 }
