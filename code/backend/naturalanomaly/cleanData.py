@@ -1,11 +1,8 @@
 import ollama
-import pandas as pd
-import pandasql as psql
 import chromadb
-from typing import Dict, Callable
 from chromadb.config import Settings
-import re
 import os
+import pandas as pd
 from django.conf import settings
 BASE_DIR=os.path.join(settings.BASE_DIR,'naturalanomaly')
 def preprocess_data(csv_path="tracked_objects.csv", persist_path="./vector_store", collection_name="tracked_data"):
@@ -41,8 +38,6 @@ def preprocess_data_without_embedding(df):
         df = df[semantic_fields]
     # else return df unchanged
     return df
-
-
 
 def preprocess_query(query, persist_path="./vector_store", collection_name="tracked_data"):
     ##embedded data is available only for default video
