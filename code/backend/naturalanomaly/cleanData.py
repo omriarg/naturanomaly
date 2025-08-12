@@ -1,5 +1,4 @@
 import ollama
-import pandas as pd
 import chromadb
 from chromadb.config import Settings
 import os
