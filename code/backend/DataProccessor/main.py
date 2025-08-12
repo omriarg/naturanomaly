@@ -57,7 +57,7 @@ def track_objects(result, bboxes, labels, confidences, tracked_objects, bbox_pat
         # resize the bounding box to 72X72 pixels
         output_image = cv2.resize(output_image, (72, 72))
         # Save bounding box image to the bbox_image_path
-        cv2.imwrite(bbox_image_path, output_image)
+        # cv2.imwrite(bbox_image_path, output_image)
 
         # Add tracked track_id, object_name, time_date, confidence to a tracked_objects dictionary with the track_id as its key
         tracked_objects[track_id] = {
