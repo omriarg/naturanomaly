@@ -21,8 +21,8 @@ class VannaVideoWrapper:
     def __init__(self, video_id: int, model: str = "llama3.2:3b"):
         self.video_id = video_id
         self.model = model
-        self.base_dir = os.path.join(settings.BASE_DIR,'naturalanomaly')
-        self.vector_store_dir = os.path.join(self.base_dir, "vector_store")#for vn
+        self.base_dir = settings.BASE_DIR
+        self.vector_store_dir = os.path.join(self.base_dir,'naturalanomaly', "vector_store")#for vn
         self.training_data = SYS_PROMPTS.get("training_data", [])
         self.video_dir=os.path.join(self.base_dir, "DataProccessor", "processed_video")
         # Initialize Vanna (vector store + model)
