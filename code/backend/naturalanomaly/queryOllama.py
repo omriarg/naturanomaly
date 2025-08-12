@@ -1,6 +1,6 @@
 import base64
 import pickle
-
+from .SysPrompts_LLM import SYS_PROMPTS
 import cv2
 import pandas as pd
 import pandasql as psql
@@ -42,22 +42,7 @@ def set_video_context(video_id=1):
         except Exception as e:
                 return pd.DataFrame()
     existing_training = vn.get_training_data()  # returns a pandas DataFrame
-    training_data = [
-        ("Which track_id had the lowest confidence score?",
-         "SELECT track_id, MIN(confidence) AS lowest_confidence FROM df GROUP BY track_id ORDER BY lowest_confidence ASC LIMIT 1;"),
-        ("What are the top 5 object types by average confidence?",
-         "SELECT object_name, AVG(confidence) AS avg_confidence FROM df GROUP BY object_name ORDER BY avg_confidence DESC LIMIT 5;"),
-        ("What is the average score for each track_id?",
-         "SELECT track_id, AVG(score) AS avg_score FROM df GROUP BY track_id ORDER BY avg_score DESC;"),
-        ("How many unique object types were detected?",
-         "SELECT COUNT(DISTINCT object_name) AS unique_object_types FROM df;"),
-        ("Which track_id had the most recent detection?",
-         "SELECT track_id, MAX(time_date) AS last_seen FROM df GROUP BY track_id ORDER BY last_seen DESC LIMIT 1;"),
-        ("What is the average confidence score across the dataset?",
-         "SELECT AVG(confidence) AS overall_avg_confidence FROM df;"),
-        ("What is the busiest time?",
-         "SELECT time_date, COUNT(*) AS detection_count FROM df GROUP BY time_date ORDER BY detection_count DESC LIMIT 1;")
-    ]
+    training_data = SYS_PROMPTS["training_data"]
     #ensure model will be trained only if neccessary
     existing_questions = list(existing_training['question'])
     training_questions = [t[0] for t in training_data]
@@ -78,13 +63,10 @@ def execute_sql(query):
         result_df = vn.run_sql(result)
         if(len(result_df.index) <= 10):
             #if result is small enough to be summarize, return a summary in natural language
-            return respond_to_user(     f"The user asked: **{query}**\n\n"
-                                     f"The system generated a SQL prompt to retrieve related data which resulted in a Table with {len(result)} row(s):\n\n"
-                                     f"{result_df.to_string()}\n\n"
-                                     "This data is from YOLO-based object detection in a surveillance video. "
-                                     "the query was run on a table where Each row describes a detected object (e.g., type, track ID, time(assigned per frame), confidence, anomaly score).\n\n"
-                                     "Please explain in natural language what this result means. "
-                                     "Provide a clear and concise summary that helps the user understand the data in plain terms.")
+            Context=f"The user asked: **{query}**\n\n"
+            f"The system generated a SQL prompt to retrieve related data which resulted in a Table with {len(result)} row(s):\n\n"
+            f"{result_df.to_string()}\n\n"
+            return respond_to_user( SYS_PROMPTS["execute_sql"]+Context)
         return result_df
     except Exception as e:
         return f"Error in vn.ask: {e}"
@@ -111,19 +93,15 @@ def chatWithOllamainROI(query: str, bbox=None, video_id=1) -> str:
     context = summarize_roi_events(region_df)
     probability_of_movement=compute_roi_probability_from_pickle(video_id=video_id,bbox=bbox)
     unusuality_explanation= analyze_most_unusual_event(region_df, likelihood=probability_of_movement)
+    Context= f"\nContext from coordinates {bbox}:\n{context}"
+    f"movement likelihood in this area:{probability_of_movement}"
+    "if the user asks what happens here? or something that hints at a general explanation of the events in the ROI, use summary to give explanation"
+    f"if the user asks why is something unusual use the explanation more: {unusuality_explanation}"
     messages = [
         {
             'role': 'system',
-            'content': (
-                "You are a helpful assistant that analyzes YOLO-based surveillance data in a specific ROI of the video "
-                "You answer based on structured object detection logs.\n"
-                "- use the summary provided in context.\n\n"
-                "if the user asks why is something unusual try to cross reference the context provided"
-                "with the heatmap expected movement likelihood   in this area provided to answer"
-                f"Context from coordinates {bbox}:\n{context}"
-                f"roi expected movement likelihood:{probability_of_movement}"
-                "if the user asks what happens here? or something that hints at a general explanation of the events in the ROI, use summary to give explanation"
-                f"if the user asks why is something unusual use the explanation more: {unusuality_explanation}"
+            'content': (SYS_PROMPTS["chatWithOllamainROI"] + Context
+
             )
         },
         {'role': 'user', 'content': query}
@@ -246,11 +224,7 @@ def respond_to_user(query: str) -> str:
             model='llama3.2',
             messages=[ {
                 'role': 'system',
-                'content': (
-                    "You are a helpful assistant in a chat UI, helping user Query a backend YOLO object detection model.\n"
-                    "in the video embedded in the UI, we see biderectional traffic on a road, with vehicles passing through"
-
-                ),
+                'content': SYS_PROMPTS["respond_to_user"],
             },
                 {'role': 'user', 'content': query}],
         )
@@ -276,20 +250,7 @@ def chatWithOllama(query: str,video_id=1) -> str:
     messages = [
         {
             'role': 'system',
-            'content': (
-                "You are a helpful assistant that decides between three tools:\n\n"
-                "**call `execute_sql` if:**\n"
-                "- The question involves YOLO-tracked data;or (like confidence, track_id, object_name, time_date).\n"
-                "- SQL is needed to compute something (averages, filtering, counting).\n\n"
-                "- user specifies some object name, in relation with detections, ie show only trucks,cars,people"
-                "**Use `heatmap_image_tool` if:**\n"
-                "- The user asks to \"bring up heatmap,\" \"show me the overall activity map,\" \"display the full heatmap,\",show heatmap "
-                "or any similar phrase indicating they want to see the entire video’s activity map.\n" \
-                "**Use `respond_to_user` if:**\n"
-                "- The question is general, like asking how YOLO works or setup help.\n\n"
-                "Dataset fields: bbox, track_id, object_name, time_date, bbox_image_path, confidence, score\n"
-                f"Context:\n{Context}"
-            )
+            'content': SYS_PROMPTS["chatWithOllama"] + Context
         },
         {'role': 'user', 'content': query}
     ]
