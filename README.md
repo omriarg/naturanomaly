@@ -38,7 +38,7 @@ code/
    python manage.py runserver
    ```
 
-This will start the API at: `http://127.0.0.1:8000/`
+This will start the API locally.
 
 ---
 
@@ -82,3 +82,4 @@ This will start the frontend (usually at `http://localhost:3000`) which will con
 - Node.js 18+  
 - Ollama installed with LLaMA 3 (e.g., `ollama run llama3`)  
 - ChromeDB / pandas / Django REST Framework
+-Vanna 
